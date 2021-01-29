@@ -5,6 +5,8 @@ import 'package:dylib/dylib.dart';
 import 'package:flutter/services.dart';
 import 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
+export 'package:opengl_es_bindings/opengl_es_bindings.dart';
+
 class FlutterWebGl {
   static const MethodChannel _channel = const MethodChannel('flutter_web_gl');
 

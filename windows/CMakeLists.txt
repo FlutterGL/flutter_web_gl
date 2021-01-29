@@ -17,8 +17,15 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 
+set(OPENGL_LIB_NAME "openGL32.dll")
+set(OPENGL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/angle")
+set(OPENGL_ARCH ${MSVC_CXX_ARCHITECTURE_ID})
+set(OPENGL_BUILD_TYPE "$<$<CONFIG:Debug>:debug>$<$<CONFIG:Release>:release>")
+set(OPENGL_LIB_DIR "${OPENGL_DIR}/${OPENGL_ARCH}/${OPENGL_BUILD_TYPE}")
+set(OPENGL_LIB "${OPENGL_LIB_DIR}/${OPENGL_LIB_NAME}")
+
 # List of absolute paths to libraries that should be bundled with the plugin
 set(flutter_web_gl_bundled_libraries
-  ""
+  "${OPENGL_LIB}"
   PARENT_SCOPE
 )

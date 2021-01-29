@@ -107,7 +107,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "4da2d898366c0e9ff2407cdba6b27c6bada56c7c"
+      resolved-ref: ce6ed38c19cbd317f054364d94dc27ebfdf05799
       url: "https://github.com/FlutterGL/opengl_es_bindings"
     source: git
     version: "1.0.0"
