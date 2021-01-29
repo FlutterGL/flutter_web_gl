@@ -1,0 +1,12 @@
+{
+    "spellright.language": [
+        "de"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex"
+    ],
+    "files.associations": {
+        "memory": "cpp"
+    }
+}

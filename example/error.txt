@@ -1,0 +1,279 @@
+[  +55 ms] executing: [C:\Entwicklung\flutter/] git -c log.showSignature=false log -n 1 --pretty=format:%H
+[  +35 ms] Exit code 0 from: git -c log.showSignature=false log -n 1 --pretty=format:%H
+[        ] 29e604e2418c71e6784e15ba4132c200d92be9e9
+[        ] executing: [C:\Entwicklung\flutter/] git tag --points-at 29e604e2418c71e6784e15ba4132c200d92be9e9
+[  +22 ms] Exit code 0 from: git tag --points-at 29e604e2418c71e6784e15ba4132c200d92be9e9
+[   +1 ms] executing: [C:\Entwicklung\flutter/] git describe --match *.*.* --long --tags 29e604e2418c71e6784e15ba4132c200d92be9e9
+[  +38 ms] Exit code 0 from: git describe --match *.*.* --long --tags 29e604e2418c71e6784e15ba4132c200d92be9e9
+[        ] 1.26.0-12.0.pre-231-g29e604e241
+[  +30 ms] executing: [C:\Entwicklung\flutter/] git rev-parse --abbrev-ref --symbolic @{u}
+[  +14 ms] Exit code 0 from: git rev-parse --abbrev-ref --symbolic @{u}
+[        ] origin/master
+[        ] executing: [C:\Entwicklung\flutter/] git ls-remote --get-url origin
+[  +11 ms] Exit code 0 from: git ls-remote --get-url origin
+[        ] https://github.com/flutter/flutter
+[  +38 ms] executing: [C:\Entwicklung\flutter/] git rev-parse --abbrev-ref HEAD
+[  +11 ms] Exit code 0 from: git rev-parse --abbrev-ref HEAD
+[        ] master
+[  +48 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[   +1 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +48 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[   +1 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +32 ms] Skipping pub get: version match.
+[  +15 ms] Found plugin flutter_web_gl at C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\
+[  +92 ms] Found plugin flutter_web_gl at C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\
+[  +25 ms] Generating C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\android\app\src\main\java\io\flutter\plugins\GeneratedPluginRegistrant.java
+[  +55 ms] Building without sound null safety
+[        ] For more information see https://dart.dev/null-safety/unsound-null-safety
+[  +14 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[  +24 ms] Exit code 0 from: C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe -format json -products * -utf8 -latest -version 16 -requires Microsoft.VisualStudio.Workload.NativeDesktop Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.CMake.Project
+[        ] [
+             {
+               "instanceId": "013aaf69",
+               "installDate": "2020-01-21T16:13:16Z",
+               "installationName": "VisualStudio/16.8.4+30907.101",
+               "installationPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community",
+               "installationVersion": "16.8.30907.101",
+               "productId": "Microsoft.VisualStudio.Product.Community",
+               "productPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Common7\\IDE\\devenv.exe",
+               "state": 4294967295,
+               "isComplete": true,
+               "isLaunchable": true,
+               "isPrerelease": false,
+               "isRebootRequired": false,
+               "displayName": "Visual Studio Community 2019",
+               "description": "Leistungsstarke IDE, kostenlos für Studenten, Open-Source-Mitwirkende und Einzelpersonen",
+               "channelId": "VisualStudio.16.Release",
+               "channelUri": "https://aka.ms/vs/16/release/channel",
+               "enginePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\resources\\app\\ServiceHub\\Services\\Microsoft.VisualStudio.Setup.Service",
+               "releaseNotes": "https://go.microsoft.com/fwlink/?LinkId=660893#16.8.4",
+               "thirdPartyNotices": "https://go.microsoft.com/fwlink/?LinkId=660909",
+               "updateDate": "2021-01-27T15:23:30.6981319Z",
+               "catalog": {
+                 "buildBranch": "d16.8",
+                 "buildVersion": "16.8.30907.101",
+                 "id": "VisualStudio/16.8.4+30907.101",
+                 "localBuild": "build-lab",
+                 "manifestName": "VisualStudio",
+                 "manifestType": "installer",
+                 "productDisplayVersion": "16.8.4",
+                 "productLine": "Dev16",
+                 "productLineVersion": "2019",
+                 "productMilestone": "RTW",
+                 "productMilestoneIsPreRelease": "False",
+                 "productName": "Visual Studio",
+                 "productPatchVersion": "4",
+                 "productPreReleaseMilestoneSuffix": "1.0",
+                 "productSemanticVersion": "16.8.4+30907.101",
+                 "requiredEngineVersion": "2.8.3267.30329"
+               },
+               "properties": {
+                 "campaignId": "974076782.1544783398",
+                 "channelManifestId": "VisualStudio.16.Release/16.8.4+30907.101",
+                 "nickname": "",
+                 "setupEngineFilePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vs_installershell.exe"
+               }
+             }
+           ]
+[   +1 ms] Building Windows application...
+[  +10 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -S C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows -B build\windows -G Visual Studio 16 2019
+[  +38 ms] -- Selecting Windows SDK version 10.0.18362.0 to target Windows 10.0.18363.
+[  +33 ms] -- Configuring done
+[ +197 ms] -- Generating done
+[  +12 ms] -- Build files have been written to: C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/build/windows
+[   +6 ms] executing: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe --build build\windows --config Release --target INSTALL --verbose
+[ +104 ms] Microsoft (R)-Build-Engine, Version 16.8.3+39993bd9d für .NET Framework
+[        ] Copyright (C) Microsoft Corporation. Alle Rechte vorbehalten.
+[  +51 ms] Der Buildvorgang wurde am 28.01.2021 21:25:56 gestartet.
+[ +198 ms] Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\INSTALL.vcxproj" auf Knoten "1" (Standardziele).
+[        ] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\INSTALL.vcxproj" (1) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ZERO_CHECK.vcxproj" (2) auf Knoten "1" (Standardziele).
+[        ] InitializeBuildStatus:
+[        ]   "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild" wird erstellt, da "AlwaysCreate" angegeben wurde.
+[  +27 ms] CustomBuild:
+[        ]   Alle Ausgaben sind aktuell.
+[  +28 ms] FinalizeBuildStatus:
+[        ]   Die Datei "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild" wird gelöscht.
+[        ]   Aktualisieren des Timestamps von "x64\Release\ZERO_CHECK\ZERO_CHECK.tlog\ZERO_CHECK.lastbuildstate".
+[        ] Die Erstellung von Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ZERO_CHECK.vcxproj" ist abgeschlossen (Standardziele).
+[  +82 ms] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\INSTALL.vcxproj" (1) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ALL_BUILD.vcxproj" (3) auf Knoten "1" (Standardziele).
+[        ] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ALL_BUILD.vcxproj" (3) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" (4) auf Knoten "1" (Standardziele).
+[        ] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" (4) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_assemble.vcxproj" (5) auf Knoten "1" (Standardziele).
+[        ] InitializeBuildStatus:
+[        ]   "x64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild" wird erstellt, da "AlwaysCreate" angegeben wurde.
+[   +7 ms] CustomBuild:
+[        ]   "The build of 'C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\CMakeFiles\1f72d7eba14db373a836bb19b7158958\flutter_assemble.rule' depends on 'C:\ENTWICKLUNG\PACKAGES\_FLUTTER_GL\FLUTTER_WEB_GL\EXAMPLE\WINDOWS\FLUTTER\EPHEMERAL\FLUTTER_WINDOWS.DLL' which is produced by the build of 'C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\CMakeFiles\653b8b150510fbc7ee6b2a372c2db06b\flutter_windows.dll.rule'. The items cannot be built in parallel."
+[  +51 ms]   Generating C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_windows.dll, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_export.h, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_windows.h, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_messenger.h, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_plugin_registrar.h, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/flutter_texture_registrar.h, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/cpp_client_wrapper/core_implementations.cc, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/cpp_client_wrapper/standard_codec.cc, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/cpp_client_wrapper/plugin_registrar.cc, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/cpp_client_wrapper/flutter_engine.cc, C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/windows/flutter/ephemeral/cpp_client_wrapper/flutter_view_controller.cc, _phony_
+[ +844 ms]   [  +55 ms] executing: [C:\Entwicklung\flutter/] git -c log.showSignature=false log -n 1 --pretty=format:%H
+[  +28 ms]   [  +52 ms] Exit code 0 from: git -c log.showSignature=false log -n 1 --pretty=format:%H
+[        ]   [        ] 29e604e2418c71e6784e15ba4132c200d92be9e9
+[        ]   [        ] executing: [C:\Entwicklung\flutter/] git tag --points-at 29e604e2418c71e6784e15ba4132c200d92be9e9
+[  +38 ms]   [  +38 ms] Exit code 0 from: git tag --points-at 29e604e2418c71e6784e15ba4132c200d92be9e9
+[   +1 ms]   [   +1 ms] executing: [C:\Entwicklung\flutter/] git describe --match *.*.* --long --tags 29e604e2418c71e6784e15ba4132c200d92be9e9
+[  +49 ms]   [  +49 ms] Exit code 0 from: git describe --match *.*.* --long --tags 29e604e2418c71e6784e15ba4132c200d92be9e9
+[        ]   [        ] 1.26.0-12.0.pre-231-g29e604e241
+[  +30 ms]   [  +30 ms] executing: [C:\Entwicklung\flutter/] git rev-parse --abbrev-ref --symbolic @{u}
+[  +17 ms]   [  +17 ms] Exit code 0 from: git rev-parse --abbrev-ref --symbolic @{u}
+[        ]   [        ] origin/master
+[        ]   [        ] executing: [C:\Entwicklung\flutter/] git ls-remote --get-url origin
+[  +15 ms]   [  +15 ms] Exit code 0 from: git ls-remote --get-url origin
+[        ]   [        ] https://github.com/flutter/flutter
+[  +41 ms]   [  +41 ms] executing: [C:\Entwicklung\flutter/] git rev-parse --abbrev-ref HEAD
+[  +16 ms]   [  +16 ms] Exit code 0 from: git rev-parse --abbrev-ref HEAD
+[        ]   [        ] master
+[  +73 ms]   [  +73 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[   +2 ms]   [   +2 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +43 ms]   [  +43 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ]   [        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +48 ms]   [  +48 ms] Initializing file store
+[  +10 ms]   [  +11 ms] Done initializing file store
+[  +40 ms]   [  +40 ms] Skipping target: gen_localizations
+[+1760 ms]   [+1760 ms] Skipping target: unpack_windows
+[ +290 ms]   [ +291 ms] Skipping target: kernel_snapshot
+[  +18 ms]   [  +18 ms] Skipping target: aot_elf_release
+[  +16 ms]   [  +16 ms] Skipping target: windows_aot_bundle
+[  +25 ms]   [  +25 ms] Skipping target: release_bundle_windows_assets
+[        ]   [        ] Persisting file store
+[   +7 ms]   [   +7 ms] Done persisting file store
+[   +3 ms]   [   +3 ms] build succeeded.
+[   +6 ms]   [   +6 ms] "flutter assemble" took 2.310ms.
+[  +67 ms]   [  +66 ms] ensureAnalyticsSent: 64ms
+[        ]   [   +1 ms] Running shutdown hooks
+[        ]   [        ] Shutdown hooks complete
+[        ]   [        ] exiting with code 0
+[  +63 ms] FinalizeBuildStatus:
+[        ]   Die Datei "x64\Release\flutter_assemble\flutter_assemble.tlog\unsuccessfulbuild" wird gelöscht.
+[        ]   Aktualisieren des Timestamps von "x64\Release\flutter_assemble\flutter_assemble.tlog\flutter_assemble.lastbuildstate".
+[        ] Die Erstellung von Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_assemble.vcxproj" ist abgeschlossen (Standardziele).
+[  +42 ms] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" (4) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\plugins\flutter_web_gl\flutter_web_gl_plugin.vcxproj" (6) auf Knoten "1" (Standardziele).
+[        ] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\plugins\flutter_web_gl\flutter_web_gl_plugin.vcxproj" (6) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_wrapper_plugin.vcxproj" (7) auf Knoten "1" (Standardziele).
+[        ] InitializeBuildStatus:
+[        ]   "flutter_wrapper_plugin.dir\Release\flutter_.11D27B96.tlog\unsuccessfulbuild" wird erstellt, da "AlwaysCreate" angegeben wurde.
+[   +1 ms] CustomBuild:
+[        ]   Alle Ausgaben sind aktuell.
+[  +35 ms] ClCompile:
+[        ]   Alle Ausgaben sind aktuell.
+[  +16 ms] Lib:
+[        ]   Alle Ausgaben sind aktuell.
+[        ]   flutter_wrapper_plugin.vcxproj -> C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\Release\flutter_wrapper_plugin.lib
+[   +8 ms] FinalizeBuildStatus:
+[        ]   Die Datei "flutter_wrapper_plugin.dir\Release\flutter_.11D27B96.tlog\unsuccessfulbuild" wird gelöscht.
+[        ]   Aktualisieren des Timestamps von "flutter_wrapper_plugin.dir\Release\flutter_.11D27B96.tlog\flutter_wrapper_plugin.lastbuildstate".
+[        ] Die Erstellung von Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_wrapper_plugin.vcxproj" ist abgeschlossen (Standardziele).
+[   +5 ms] InitializeBuildStatus:
+[        ]   "flutter_web_gl_plugin.dir\Release\flutter_.8629B606.tlog\unsuccessfulbuild" wird erstellt, da "AlwaysCreate" angegeben wurde.
+[   +1 ms] CustomBuild:
+[        ]   Alle Ausgaben sind aktuell.
+[   +6 ms] ClCompile:
+[        ]   Alle Ausgaben sind aktuell.
+[  +15 ms] Link:
+[        ]   Alle Ausgaben sind aktuell.
+[   +5 ms]   flutter_web_gl_plugin.vcxproj -> C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\plugins\flutter_web_gl\Release\flutter_web_gl_plugin.dll
+[   +4 ms] FinalizeBuildStatus:
+[        ]   Die Datei "flutter_web_gl_plugin.dir\Release\flutter_.8629B606.tlog\unsuccessfulbuild" wird gelöscht.
+[        ]   Aktualisieren des Timestamps von "flutter_web_gl_plugin.dir\Release\flutter_.8629B606.tlog\flutter_web_gl_plugin.lastbuildstate".
+[        ] Die Erstellung von Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\plugins\flutter_web_gl\flutter_web_gl_plugin.vcxproj" ist abgeschlossen (Standardziele).
+[  +24 ms] Das Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" (4) erstellt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_wrapper_app.vcxproj" (8) auf Knoten "1" (Standardziele).
+[        ] InitializeBuildStatus:
+[        ]   "flutter_wrapper_app.dir\Release\flutter_.91BAC676.tlog\unsuccessfulbuild" wird erstellt, da "AlwaysCreate" angegeben wurde.
+[   +1 ms] CustomBuild:
+[        ]   Alle Ausgaben sind aktuell.
+[  +11 ms] ClCompile:
+[        ]   Alle Ausgaben sind aktuell.
+[   +3 ms] Lib:
+[        ]   Alle Ausgaben sind aktuell.
+[        ]   flutter_wrapper_app.vcxproj -> C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\Release\flutter_wrapper_app.lib
+[   +4 ms] FinalizeBuildStatus:
+[        ]   Die Datei "flutter_wrapper_app.dir\Release\flutter_.91BAC676.tlog\unsuccessfulbuild" wird gelöscht.
+[        ]   Aktualisieren des Timestamps von "flutter_wrapper_app.dir\Release\flutter_.91BAC676.tlog\flutter_wrapper_app.lastbuildstate".
+[        ] Die Erstellung von Projekt "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\flutter\flutter_wrapper_app.vcxproj" ist abgeschlossen (Standardziele).
+[   +5 ms] InitializeBuildStatus:
+[        ]   Aktualisieren des Timestamps von "flutter_web_gl_example.dir\Release\flutter_.9EFEB0C9.tlog\unsuccessfulbuild".
+[   +1 ms] CustomBuild:
+[        ]   Alle Ausgaben sind aktuell.
+[  +20 ms] ClCompile:
+[        ]   C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29333\bin\HostX64\x64\CL.exe /c /IC:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows /IC:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\flutter\ephemeral /IC:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\flutter\ephemeral\cpp_client_wrapper\include /IC:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\flutter\ephemeral\.plugin_symlinks\flutter_web_gl\windows\include /nologo /W4 /WX /diagnostics:column /O2 /Ob2 /D WIN32 /D _WINDOWS /D NDEBUG /D _HAS_EXCEPTIONS=0 /D NOMINMAX /D UNICODE /D _UNICODE /D "CMAKE_INTDIR=\"Release\"" /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++17 /Fo"flutter_web_gl_example.dir\Release\\" /Fd"flutter_web_gl_example.dir\Release\vc142.pdb" /Gd /TP /wd4100 /errorReport:queue C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\flutter\generated_plugin_registrant.cc C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\runner\flutter_window.cpp
+[  +60 ms]   generated_plugin_registrant.cc
+[ +307 ms]   flutter_window.cpp
+[ +586 ms]   Generating Code...
+[ +130 ms] ResourceCompile:
+[        ]   Alle Ausgaben sind aktuell.
+[   +9 ms] Link:
+[        ]   C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29333\bin\HostX64\x64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\Release\flutter_web_gl_example.exe" /INCREMENTAL:NO /NOLOGO ..\flutter\Release\flutter_wrapper_app.lib ..\plugins\flutter_web_gl\Release\flutter_web_gl_plugin.lib C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\flutter\ephemeral\flutter_windows.dll.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\windows\runner\runner.exe.manifest /PDB:"C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/build/windows/runner/Release/flutter_web_gl_example.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Entwicklung/packages/_flutter_gl/flutter_web_gl/example/build/windows/runner/Release/flutter_web_gl_example.lib" /MACHINE:X64  /machine:x64 flutter_web_gl_example.dir\Release\Runner.res
+[        ]   flutter_web_gl_example.dir\Release\flutter_window.obj
+[        ]   flutter_web_gl_example.dir\Release\main.obj
+[        ]   flutter_web_gl_example.dir\Release\run_loop.obj
+[        ]   flutter_web_gl_example.dir\Release\utils.obj
+[        ]   flutter_web_gl_example.dir\Release\win32_window.obj
+[        ]   flutter_web_gl_example.dir\Release\generated_plugin_registrant.obj
+[   +7 ms] Die Erstellung des Projekts "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" ist abgeschlossen (Standardziele) -- FEHLER.
+[        ] Die Erstellung des Projekts "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ALL_BUILD.vcxproj" ist abgeschlossen (Standardziele) -- FEHLER.
+[        ] Die Erstellung des Projekts "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\INSTALL.vcxproj" ist abgeschlossen (Standardziele) -- FEHLER.
+[   +1 ms] Fehler beim Buildvorgang.
+[   +3 ms] "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\INSTALL.vcxproj" (Standardziel) (1) ->
+[        ] "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\ALL_BUILD.vcxproj" (Standardziel) (3) ->
+[        ] "C:\Entwicklung\packages\_flutter_gl\flutter_web_gl\example\build\windows\runner\flutter_web_gl_example.vcxproj" (Standardziel) (4) ->
+[        ] (Link Ziel) -> 
+[   +3 ms]     0 Warnung(en)
+[        ]     1 Fehler
+[        ] Verstrichene Zeit 00:00:05.35
+[  +16 ms] Building Windows application... (completed in 5,8s)
+[        ] "flutter windows" took 6.172ms.
+[  +13 ms] ensureAnalyticsSent: 2ms
+[        ] Running shutdown hooks
+[        ] Shutdown hooks complete
+[        ] exiting with code 1
