@@ -12,11 +12,18 @@ class FlutterWebGl {
 
   static LibOpenGLES? _libOpenGLES;
   static LibOpenGLES get rawOpenGl {
-    return _libOpenGLES ??= LibOpenGLES(ffi.DynamicLibrary.open(
-      resolveDylibPath(
-        'openGL32',
-      ),
-    ));
+    final libPath = resolveDylibPath(
+      'libGLESv2',
+    );
+    return _libOpenGLES ??= LibOpenGLES(ffi.DynamicLibrary.open(libPath));
+  }
+
+  static LibEGL? _libEGL;
+  static LibEGL get rawEGl {
+    final libPath = resolveDylibPath(
+      'libEGL',
+    );
+    return _libEGL ??= LibEGL(ffi.DynamicLibrary.open(libPath));
   }
 
   static Future<String> get platformVersion async {
