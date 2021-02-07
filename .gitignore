@@ -6,3 +6,4 @@
 
 build/
 flutter_webgl.code-workspace
+.idea/workspace.xml

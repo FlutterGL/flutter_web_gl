@@ -39,12 +39,7 @@ class _MyAppState extends State<MyApp> {
       print("failed to get texture id");
     }
 
-    final libGL = FlutterWebGl.rawOpenGl;
-    final libEGL = FlutterWebGl.rawEGl;
-
-    final display = libEGL.
-
-    final version = libGL.glGetString(GL_VERSION);
+    FlutterWebGl.initOpenGL();
 
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
