@@ -99,13 +99,20 @@ List<Pointer<Void>> eglChooseConfig(
 Pointer<Void> eglCreateContext(
   Pointer<Void> display,
   Pointer<Void> config, {
-  int contextClientVersion = 1,
+  int contextClientVersion = 3,
   Pointer<Void>? shareContext,
+  bool isDebugContext = false,
 }) {
-  final attributeList = allocate<Int32>(count: 3);
+  final attributeList = allocate<Int32>(count: 5);
   attributeList[0] = EGL_CONTEXT_CLIENT_VERSION;
   attributeList[1] = contextClientVersion;
-  attributeList[2] = EglValue.none.toIntValue();
+  if (isDebugContext) {
+    attributeList[2] = EglValue.none.toIntValue();
+  } else {
+    attributeList[2] = EGL_CONTEXT_OPENGL_DEBUG;
+    attributeList[3] = EGL_TRUE;
+    attributeList[4] = EglValue.none.toIntValue();
+  }
 
   final nativeCallResult = _libEGL.eglCreateContext(
       display, config, shareContext ?? nullptr, attributeList);
@@ -778,6 +785,7 @@ enum EglValue {
 
   /// EGL_OPENGL_ES2_BIT
   openglEs2Bit,
+  openglEs3Bit,
 }
 
 extension EglValueExtension on EglValue {
@@ -787,6 +795,8 @@ extension EglValueExtension on EglValue {
         return EGL_NONE;
       case EglValue.openglEs2Bit:
         return EGL_OPENGL_ES2_BIT;
+      case EglValue.openglEs3Bit:
+        return EGL_OPENGL_ES3_BIT;
       default:
         throw UnsupportedError('Unsupported value: $this');
     }
