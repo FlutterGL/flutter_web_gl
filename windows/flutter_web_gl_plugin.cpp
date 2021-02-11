@@ -270,8 +270,6 @@ void FlutterWebGlPlugin::HandleMethodCall(
         return;
       }
 
-      std::cerr << width << "x" << height << std::endl;
-      _texture = std::make_unique<OpenGLTexture>(width, height);
       unsigned int fbo;
       glGenFramebuffers(1, &fbo);
       glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -284,7 +282,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
       auto error = glGetError();
       if (error != GL_NO_ERROR)
       {
-          std::cerr << "GlError" << error << std::endl;
+          std::cerr << "GlError while allocating Renderbuffer" << error << std::endl;
       }
       glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,rbo);
       auto frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -299,26 +297,12 @@ void FlutterWebGlPlugin::HandleMethodCall(
         std::cerr << "GlError" << error << std::endl;
       }
 
+      _texture = std::make_unique<OpenGLTexture>(width, height);
       texture_ = std::make_unique<flutter::TextureVariant>(flutter::PixelBufferTexture(
         [this](size_t width, size_t height) -> const FlutterDesktopPixelBuffer * {
           return _texture->CopyPixelBuffer(width, height);
         }));
       
-
-      GLint widthRbo;
-      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &widthRbo);
-      error = glGetError();
-      if (error != GL_NO_ERROR)
-      {
-          std::cerr << "GlError" << error << std::endl;
-      }
-    GLint heightRbo ;
-    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &heightRbo);
-
-    GLint internalFormat ;
-    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &internalFormat);
-
-    std::cerr << "rboID: " << rbo << "with: " << widthRbo << "height: " << heightRbo << "internalFormat: " << internalFormat << std::endl;
 
       int64_t texture_id = textures_->RegisterTexture(texture_.get());
       auto response = flutter::EncodableValue(flutter::EncodableMap{
@@ -330,7 +314,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
       );
 
       result->Success(response);
-      std::cerr << "Created a new texture " << width << "x" << height << std::endl;
+      std::cerr << "Created a new texture " << width << "x" << height << "openGL ID" << rbo << std::endl;
   }
   else if (method_call.method_name().compare("updateTexture") == 0) {
     // TODO: check if id is valid
@@ -346,7 +330,6 @@ void FlutterWebGlPlugin::HandleMethodCall(
         result->Error("no texture id","no texture id");
         return;
       }
-      //draw();
 
        glReadPixels(0, 0, (GLsizei)_texture->buffer->width, (GLsizei)_texture->buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)_texture->buffer->buffer);
        textures_->MarkTextureFrameAvailable(id);
@@ -359,100 +342,100 @@ void FlutterWebGlPlugin::HandleMethodCall(
 }
 
 
-void draw()
-{
-   char vShaderStr[] =
-      "#version 300 es                          \n"
-      "layout(location = 0) in vec4 vPosition;  \n"
-      "void main()                              \n"
-      "{                                        \n"
-      "   gl_Position = vPosition;              \n"
-      "}                                        \n";
+// void draw()
+// {
+//    char vShaderStr[] =
+//       "#version 300 es                          \n"
+//       "layout(location = 0) in vec4 vPosition;  \n"
+//       "void main()                              \n"
+//       "{                                        \n"
+//       "   gl_Position = vPosition;              \n"
+//       "}                                        \n";
 
-   char fShaderStr[] =
-      "#version 300 es                              \n"
-      "precision mediump float;                     \n"
-      "out vec4 fragColor;                          \n"
-      "void main()                                  \n"
-      "{                                            \n"
-      "   fragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );  \n"
-      "}                                            \n";
+//    char fShaderStr[] =
+//       "#version 300 es                              \n"
+//       "precision mediump float;                     \n"
+//       "out vec4 fragColor;                          \n"
+//       "void main()                                  \n"
+//       "{                                            \n"
+//       "   fragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );  \n"
+//       "}                                            \n";
 
-   GLuint vertexShader;
-   GLuint fragmentShader;
-   GLuint programObject;
-   GLint linked;
+//    GLuint vertexShader;
+//    GLuint fragmentShader;
+//    GLuint programObject;
+//    GLint linked;
 
-   // Load the vertex/fragment shaders
-   vertexShader = LoadShader ( GL_VERTEX_SHADER, vShaderStr );
-   fragmentShader = LoadShader ( GL_FRAGMENT_SHADER, fShaderStr );
+//    // Load the vertex/fragment shaders
+//    vertexShader = LoadShader ( GL_VERTEX_SHADER, vShaderStr );
+//    fragmentShader = LoadShader ( GL_FRAGMENT_SHADER, fShaderStr );
 
-   // Create the program object
-   programObject = glCreateProgram ( );
+//    // Create the program object
+//    programObject = glCreateProgram ( );
 
-   if ( programObject == 0 )
-   {
+//    if ( programObject == 0 )
+//    {
       
-      auto error = glGetError();
-      if (error != GL_NO_ERROR)
-      {
-          std::cerr << "GlError" << error << std::endl;
-      }
-   }
+//       auto error = glGetError();
+//       if (error != GL_NO_ERROR)
+//       {
+//           std::cerr << "GlError" << error << std::endl;
+//       }
+//    }
 
-   glAttachShader ( programObject, vertexShader );
-   glAttachShader ( programObject, fragmentShader );
+//    glAttachShader ( programObject, vertexShader );
+//    glAttachShader ( programObject, fragmentShader );
 
-   // Link the program
-   glLinkProgram ( programObject );
+//    // Link the program
+//    glLinkProgram ( programObject );
 
-   // Check the link status
-   glGetProgramiv ( programObject, GL_LINK_STATUS, &linked );
+//    // Check the link status
+//    glGetProgramiv ( programObject, GL_LINK_STATUS, &linked );
 
-   if ( !linked )
-   {
-      GLint infoLen = 0;
+//    if ( !linked )
+//    {
+//       GLint infoLen = 0;
 
-      glGetProgramiv ( programObject, GL_INFO_LOG_LENGTH, &infoLen );
+//       glGetProgramiv ( programObject, GL_INFO_LOG_LENGTH, &infoLen );
 
-      if ( infoLen > 1 )
-      {
-         char *infoLog = (char*)malloc ( sizeof ( char ) * infoLen );
+//       if ( infoLen > 1 )
+//       {
+//          char *infoLog = (char*)malloc ( sizeof ( char ) * infoLen );
 
-         glGetProgramInfoLog ( programObject, infoLen, NULL, infoLog );
-         std::cerr << "Error linking program:\n%s\n" << infoLog << std::endl;
+//          glGetProgramInfoLog ( programObject, infoLen, NULL, infoLog );
+//          std::cerr << "Error linking program:\n%s\n" << infoLog << std::endl;
 
-         free ( infoLog );
-      }
+//          free ( infoLog );
+//       }
 
-      glDeleteProgram ( programObject );
-      return ;
-   }
-   // Store the program object
+//       glDeleteProgram ( programObject );
+//       return ;
+//    }
+//    // Store the program object
 
-   glClearColor ( 0.0f, 0.0f, 1.0f, 1.0f );
+//    glClearColor ( 0.0f, 0.0f, 1.0f, 1.0f );
   
-   GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f,
-                            -0.5f, -0.5f, 0.0f,
-                            0.5f, -0.5f, 0.0f
-                         };
+//    GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f,
+//                             -0.5f, -0.5f, 0.0f,
+//                             0.5f, -0.5f, 0.0f
+//                          };
 
-   // Set the viewport
-  glViewport ( 0, 0, 600, 400);
+//    // Set the viewport
+//   glViewport ( 0, 0, 600, 400);
 
-   // Clear the color buffer
-   glClear ( GL_COLOR_BUFFER_BIT );
+//    // Clear the color buffer
+//    glClear ( GL_COLOR_BUFFER_BIT );
 
-   // Use the program object
-   glUseProgram ( programObject );
+//    // Use the program object
+//    glUseProgram ( programObject );
 
-   // Load the vertex data
-   glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, vVertices );
-   glEnableVertexAttribArray ( 0 );
+//    // Load the vertex data
+//    glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, vVertices );
+//    glEnableVertexAttribArray ( 0 );
 
-  glDrawArrays ( GL_TRIANGLES, 0, 3 );
+//   glDrawArrays ( GL_TRIANGLES, 0, 3 );
 
-}
+// }
 
 
 

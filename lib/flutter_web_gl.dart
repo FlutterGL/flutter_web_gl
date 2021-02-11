@@ -93,38 +93,13 @@ class FlutterWebGL {
     final rbo = result['rbo'] as int;
     rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
-    Pointer<Uint32> widthRbo = allocate();
-    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, widthRbo.cast());
-
-    Pointer<Uint32> heightRbo = allocate();
-    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, heightRbo.cast());
-
-    Pointer<Uint32> internalFormat = allocate();
-    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, internalFormat.cast());
-
-    print('rboID: $rbo   with:${widthRbo.value} height:${heightRbo.value} internalFormat:${internalFormat.value}');
-
     rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
     var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
       print("Framebuffer (color) check failed: $frameBufferCheck");
     }
+    rawOpenGl.glViewport(0, 0, 600, 400);
 
-    // Pointer<Uint32> rboDepth = allocate();
-    // rawOpenGl.glGenRenderbuffers(1, rboDepth);
-    // print(rawOpenGl.glGetError());
-    // rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, rboDepth.value);
-    // print(rawOpenGl.glGetError());
-    // rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
-    // print("after renderbuffer storage: ${rawOpenGl.glGetError()}");
-
-    // rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth.value);
-    // frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    // if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
-    //   print("Framebuffer (depth) check failed: $frameBufferCheck");
-    // }
-    // final p = rawOpenGl.glGetString(GL_VENDOR);
-    // String str = Utf8.fromUtf8(p.cast());
     return result["textureId"];
   }
 
