@@ -77,27 +77,52 @@ class FlutterWebGL {
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
 
     // The plugin makes sure that it doesn't matter if this is called multiple times
-    await _channel
-        .invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
+    await _channel.invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
     // final p = FlutterWebGl.rawOpenGl.glGetString(GL_VENDOR);
     // String str = Utf8.fromUtf8(p.cast());
   }
 
   static Future<int> createTexture(int width, int height) async {
-    final result =
-        await _channel.invokeMethod('createTexture', [width, height]);
+    final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height});
 
     Pointer<Uint32> fbo = allocate();
     rawOpenGl.glGenFramebuffers(1, fbo);
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, fbo.value);
 
+    print(rawOpenGl.glGetError());
     final rbo = result['rbo'] as int;
     rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
-    rawOpenGl.glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
-    final frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    print(frameBufferCheck);
+    Pointer<Uint32> widthRbo = allocate();
+    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, widthRbo.cast());
+
+    Pointer<Uint32> heightRbo = allocate();
+    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, heightRbo.cast());
+
+    Pointer<Uint32> internalFormat = allocate();
+    rawOpenGl.glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, internalFormat.cast());
+
+    print('rboID: $rbo   with:${widthRbo.value} height:${heightRbo.value} internalFormat:${internalFormat.value}');
+
+    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
+    var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
+      print("Framebuffer (color) check failed: $frameBufferCheck");
+    }
+
+    // Pointer<Uint32> rboDepth = allocate();
+    // rawOpenGl.glGenRenderbuffers(1, rboDepth);
+    // print(rawOpenGl.glGetError());
+    // rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, rboDepth.value);
+    // print(rawOpenGl.glGetError());
+    // rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+    // print("after renderbuffer storage: ${rawOpenGl.glGetError()}");
+
+    // rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth.value);
+    // frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    // if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
+    //   print("Framebuffer (depth) check failed: $frameBufferCheck");
+    // }
     // final p = rawOpenGl.glGetString(GL_VENDOR);
     // String str = Utf8.fromUtf8(p.cast());
     return result["textureId"];

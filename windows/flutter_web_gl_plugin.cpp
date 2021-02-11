@@ -22,7 +22,53 @@ namespace {
 using flutter::EncodableMap;
 using flutter::EncodableValue;
 
-  
+void draw();
+
+GLuint LoadShader ( GLenum type, const char *shaderSrc )
+{
+   GLuint shader;
+   GLint compiled;
+
+   // Create the shader object
+   shader = glCreateShader ( type );
+
+   if ( shader == 0 )
+   {
+      return 0;
+   }
+
+   // Load the shader source
+   glShaderSource ( shader, 1, &shaderSrc, NULL );
+
+   // Compile the shader
+   glCompileShader ( shader );
+
+   // Check the compile status
+   glGetShaderiv ( shader, GL_COMPILE_STATUS, &compiled );
+
+   if ( !compiled )
+   {
+      GLint infoLen = 0;
+
+      glGetShaderiv ( shader, GL_INFO_LOG_LENGTH, &infoLen );
+
+      if ( infoLen > 1 )
+      {
+         char *infoLog =(char*) malloc ( sizeof ( char ) * infoLen );
+
+         glGetShaderInfoLog ( shader, infoLen, NULL, infoLog );
+         std::cerr<< "Error compiling shader:\n%s\n" << infoLog << std::endl;
+
+         free ( infoLog );
+      }
+
+      glDeleteShader ( shader );
+      return 0;
+   }
+
+   return shader;
+
+}  
 
   class OpenGLTexture
   {
@@ -196,8 +242,36 @@ void FlutterWebGlPlugin::HandleMethodCall(
       result->Success();
   }
   else if (method_call.method_name().compare("createTexture") == 0) {
+      int width = 0;
+      int height = 0;
+      if (arguments) {
+          auto texture_width = arguments->find(EncodableValue("width"));
+          if (texture_width != arguments->end()) {
+              width = std::get<std::int32_t>(texture_width->second);
+          }
+          else
+          {
+            result->Error("no texture width","no texture width");
+            return;
+          }
+          auto texture_height = arguments->find(EncodableValue("height"));
+          if (texture_height != arguments->end()) {
+              height = std::get<std::int32_t>(texture_height->second);
+          }
+          else
+          {
+            result->Error("no texture height","no texture height");
+            return;
+          }
+      }
+      else
+      {
+        result->Error("no texture texture height and width","no texture width and height");
+        return;
+      }
 
-      _texture = std::make_unique<OpenGLTexture>(800, 600);
+      std::cerr << width << "x" << height << std::endl;
+      _texture = std::make_unique<OpenGLTexture>(width, height);
       unsigned int fbo;
       glGenFramebuffers(1, &fbo);
       glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -205,8 +279,13 @@ void FlutterWebGlPlugin::HandleMethodCall(
       unsigned int rbo;
       glGenRenderbuffers(1, &rbo);
       glBindRenderbuffer(GL_RENDERBUFFER, rbo);  
-      
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 800, 600);
+
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+      auto error = glGetError();
+      if (error != GL_NO_ERROR)
+      {
+          std::cerr << "GlError" << error << std::endl;
+      }
       glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,rbo);
       auto frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
       if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE)
@@ -214,7 +293,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
           std::cerr << "Framebuffer error" << frameBufferCheck << std::endl;
       }
 
-      auto error = glGetError() ;
+      error = glGetError() ;
       if( error != GL_NO_ERROR)
       {
         std::cerr << "GlError" << error << std::endl;
@@ -224,6 +303,22 @@ void FlutterWebGlPlugin::HandleMethodCall(
         [this](size_t width, size_t height) -> const FlutterDesktopPixelBuffer * {
           return _texture->CopyPixelBuffer(width, height);
         }));
+      
+
+      GLint widthRbo;
+      glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &widthRbo);
+      error = glGetError();
+      if (error != GL_NO_ERROR)
+      {
+          std::cerr << "GlError" << error << std::endl;
+      }
+    GLint heightRbo ;
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &heightRbo);
+
+    GLint internalFormat ;
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &internalFormat);
+
+    std::cerr << "rboID: " << rbo << "with: " << widthRbo << "height: " << heightRbo << "internalFormat: " << internalFormat << std::endl;
 
       int64_t texture_id = textures_->RegisterTexture(texture_.get());
       auto response = flutter::EncodableValue(flutter::EncodableMap{
@@ -235,7 +330,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
       );
 
       result->Success(response);
-
+      std::cerr << "Created a new texture " << width << "x" << height << std::endl;
   }
   else if (method_call.method_name().compare("updateTexture") == 0) {
     // TODO: check if id is valid
@@ -251,6 +346,8 @@ void FlutterWebGlPlugin::HandleMethodCall(
         result->Error("no texture id","no texture id");
         return;
       }
+      //draw();
+
        glReadPixels(0, 0, (GLsizei)_texture->buffer->width, (GLsizei)_texture->buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)_texture->buffer->buffer);
        textures_->MarkTextureFrameAvailable(id);
 
@@ -262,6 +359,103 @@ void FlutterWebGlPlugin::HandleMethodCall(
 }
 
 
+void draw()
+{
+   char vShaderStr[] =
+      "#version 300 es                          \n"
+      "layout(location = 0) in vec4 vPosition;  \n"
+      "void main()                              \n"
+      "{                                        \n"
+      "   gl_Position = vPosition;              \n"
+      "}                                        \n";
+
+   char fShaderStr[] =
+      "#version 300 es                              \n"
+      "precision mediump float;                     \n"
+      "out vec4 fragColor;                          \n"
+      "void main()                                  \n"
+      "{                                            \n"
+      "   fragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );  \n"
+      "}                                            \n";
+
+   GLuint vertexShader;
+   GLuint fragmentShader;
+   GLuint programObject;
+   GLint linked;
+
+   // Load the vertex/fragment shaders
+   vertexShader = LoadShader ( GL_VERTEX_SHADER, vShaderStr );
+   fragmentShader = LoadShader ( GL_FRAGMENT_SHADER, fShaderStr );
+
+   // Create the program object
+   programObject = glCreateProgram ( );
+
+   if ( programObject == 0 )
+   {
+      
+      auto error = glGetError();
+      if (error != GL_NO_ERROR)
+      {
+          std::cerr << "GlError" << error << std::endl;
+      }
+   }
+
+   glAttachShader ( programObject, vertexShader );
+   glAttachShader ( programObject, fragmentShader );
+
+   // Link the program
+   glLinkProgram ( programObject );
+
+   // Check the link status
+   glGetProgramiv ( programObject, GL_LINK_STATUS, &linked );
+
+   if ( !linked )
+   {
+      GLint infoLen = 0;
+
+      glGetProgramiv ( programObject, GL_INFO_LOG_LENGTH, &infoLen );
+
+      if ( infoLen > 1 )
+      {
+         char *infoLog = (char*)malloc ( sizeof ( char ) * infoLen );
+
+         glGetProgramInfoLog ( programObject, infoLen, NULL, infoLog );
+         std::cerr << "Error linking program:\n%s\n" << infoLog << std::endl;
+
+         free ( infoLog );
+      }
+
+      glDeleteProgram ( programObject );
+      return ;
+   }
+   // Store the program object
+
+   glClearColor ( 0.0f, 0.0f, 1.0f, 1.0f );
+  
+   GLfloat vVertices[] = {  0.0f,  0.5f, 0.0f,
+                            -0.5f, -0.5f, 0.0f,
+                            0.5f, -0.5f, 0.0f
+                         };
+
+   // Set the viewport
+  glViewport ( 0, 0, 600, 400);
+
+   // Clear the color buffer
+   glClear ( GL_COLOR_BUFFER_BIT );
+
+   // Use the program object
+   glUseProgram ( programObject );
+
+   // Load the vertex data
+   glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, vVertices );
+   glEnableVertexAttribArray ( 0 );
+
+  glDrawArrays ( GL_TRIANGLES, 0, 3 );
+
+}
+
+
+
 
 }  // namespace
 
@@ -271,3 +465,4 @@ void FlutterWebGlPluginRegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()
           ->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
 }
+
