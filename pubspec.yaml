@@ -11,8 +11,8 @@ environment:
 dependencies:
   dylib: 0.2.1-nullsafety.0
   ffi: 0.2.0-nullsafety.1
-  opengl_es_bindings: 
-    git: https://github.com/FlutterGL/opengl_es_bindings
+  opengl_es_bindings: ^1.0.0-pre 
+    # git: https://github.com/FlutterGL/opengl_es_bindings
   flutter:
     sdk: flutter
 

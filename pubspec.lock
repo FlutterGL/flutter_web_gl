@@ -91,12 +91,10 @@ packages:
   opengl_es_bindings:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "45053cea3e4f3c13d1acfb6a42b5b80123189e67"
-      url: "https://github.com/FlutterGL/opengl_es_bindings"
-    source: git
-    version: "1.0.0"
+      name: opengl_es_bindings
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0-pre"
   path:
     dependency: transitive
     description:
