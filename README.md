@@ -58,3 +58,12 @@ Currently, I see the following tasks that need to be solved.
 
 - [ ] design widgets that let you use WebGL without needing to care about Texture allocation and notifying 
 - [ ] write examples and documentation
+
+
+## resources
+https://chromium.googlesource.com/angle/angle
+https://github.com/kakashidinho/metalangle
+https://www.khronos.org/registry/OpenGL/specs/es/3.2/es_spec_3.2.pdf
+https://www.khronos.org/registry/EGL/specs/eglspec.1.5.pdf
+
+https://learnopengl.com/Getting-started/Hello-Triangle
