@@ -57,15 +57,32 @@ class FlutterWebGL {
 
     _config = chooseConfigResult[0];
 
-    _baseAppContext = eglCreateContext(
+    _pluginContext = eglCreateContext(
       _display,
       _config,
       contextClientVersion: 3,
     );
-    _pluginContext = eglCreateContext(
+
+    final pluginContextAdress =
+        await _channel.invokeMethod<int>('initOpenGL', {'openGLContext': _pluginContext.address});
+    if (pluginContextAdress == null) {
+      throw EglException('Plugin.initOpenGL didn\'t return an OpenGL context. Something is really wrong!');
+    }
+
+    final returnedPluginContext = Pointer<Void>.fromAddress(pluginContextAdress);
+    if (returnedPluginContext != _pluginContext) {
+      // this can only be the case if this method is called from another thread than the
+      // Dart main Thread, like from an isolate. In this case the plugin has already a context
+      // so we don't need this one anymore.
+      eglDestroyContext(_display, _pluginContext);
+    }
+
+    _baseAppContext = eglCreateContext(
       _display,
       _config,
-      shareContext: _baseAppContext,
+
+      /// we link both contexts so that app and plugin can share OpenGL Objects
+      shareContext: returnedPluginContext,
       contextClientVersion: 3,
     );
 
@@ -74,12 +91,9 @@ class FlutterWebGL {
       EglSurfaceAttributes.width: 16,
       EglSurfaceAttributes.height: 16,
     });
-    eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
 
-    // The plugin makes sure that it doesn't matter if this is called multiple times
-    await _channel.invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
-    // final p = FlutterWebGl.rawOpenGl.glGetString(GL_VENDOR);
-    // String str = Utf8.fromUtf8(p.cast());
+    /// bind context to this thread. All following OpenGL calls from this thread will use this context
+    eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
   }
 
   static Future<int> createTexture(int width, int height) async {

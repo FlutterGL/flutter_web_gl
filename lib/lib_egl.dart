@@ -17,8 +17,7 @@ Pointer<Void> eglGetDisplay([Pointer<Void>? displayId]) {
   final nativeCallResult = _libEGL.eglGetDisplay(displayId ?? nullptr);
 
   if (nativeCallResult == nullptr) {
-    throw EglException(
-        'No display matching display ID [$displayId] was found.');
+    throw EglException('No display matching display ID [$displayId] was found.');
   }
 
   return nativeCallResult;
@@ -114,8 +113,7 @@ Pointer<Void> eglCreateContext(
     attributeList[4] = EglValue.none.toIntValue();
   }
 
-  final nativeCallResult = _libEGL.eglCreateContext(
-      display, config, shareContext ?? nullptr, attributeList);
+  final nativeCallResult = _libEGL.eglCreateContext(display, config, shareContext ?? nullptr, attributeList);
   late Pointer<Void> result;
 
   if (nativeCallResult != nullptr) {
@@ -137,8 +135,7 @@ Pointer<Void> eglCreateWindowSurface(
   Pointer<Void> config,
   Pointer<Void> nativeWindow,
 ) {
-  final nativeCallResult =
-      _libEGL.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
+  final nativeCallResult = _libEGL.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
 
   if (nativeCallResult == nullptr) {
     throw EglException(
@@ -168,8 +165,7 @@ Pointer<Void> eglCreatePbufferSurface(
   // The list must be terminated with EGL_NONE.
   attributeList[attributeCount - 1] = EglValue.none.toIntValue();
 
-  final nativeCallResult =
-      _libEGL.eglCreatePbufferSurface(display, config, attributeList);
+  final nativeCallResult = _libEGL.eglCreatePbufferSurface(display, config, attributeList);
 
   free(attributeList);
   if (nativeCallResult == nullptr) {
@@ -186,8 +182,7 @@ void eglMakeCurrent(
   Pointer<Void> read,
   Pointer<Void> context,
 ) {
-  final nativeCallResult =
-      _libEGL.eglMakeCurrent(display, draw, read, context) == 1;
+  final nativeCallResult = _libEGL.eglMakeCurrent(display, draw, read, context) == 1;
 
   if (nativeCallResult) {
     return;
@@ -207,8 +202,20 @@ void eglSwapBuffers(
     return;
   }
 
-  throw EglException(
-      'Failed to swap buffers using display [$display], surface [$surface].');
+  throw EglException('Failed to swap buffers using display [$display], surface [$surface].');
+}
+
+void eglDestroyContext(
+  Pointer<Void> display,
+  Pointer<Void> context,
+) {
+  final nativeCallResult = _libEGL.eglDestroyContext(display, context) == 1;
+
+  if (nativeCallResult) {
+    return;
+  }
+
+  throw EglException('Failed to destroy context [$display], surface [$context].');
 }
 
 //
@@ -224,8 +231,7 @@ class EglException implements Exception {
   bool get hasEglError => eglError != EglError.success;
 
   @override
-  String toString() =>
-      '$message${hasEglError ? ' EGL error $eglError (${eglError.toIntValue()})' : ''}';
+  String toString() => '$message${hasEglError ? ' EGL error $eglError (${eglError.toIntValue()})' : ''}';
 }
 
 class EglInitializeResult {

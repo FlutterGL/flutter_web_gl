@@ -163,14 +163,25 @@ void FlutterWebGlPlugin::HandleMethodCall(
     }
     result->Success(flutter::EncodableValue(version_stream.str()));
   }
-  else if (method_call.method_name().compare("initOpenGL") == 0) {
-      
+  else if (method_call.method_name().compare("initOpenGL") == 0) 
+  {
       static EGLContext  context;
-      if (context)
+      if (context != nullptr)
       {
-        result->Success();
+        // this means initOpenGL() was already called, which makes sense if you want to acess a Texture not only 
+        // from the main thread but also from an isolate. On the plugin layer here that doesn't bother because all 
+        // by `initOpenGL``in Dart created contexts will be linked to the one we got from the very first call to `initOpenGL`
+        // we return this information so that the Dart side can dispose of one context.
+        auto response = flutter::EncodableValue(context);
+        result->Success(response);
+
+        return;
       }
 
+      // Obtain the OpenGL context that was created on the Dart side
+      // it is linked to the context that is used by the Dart side for all further OpenGL operations over FFI
+      // Because of that they are shared (linked) they have both access to the same RenderbufferObjects (RBO) which allows
+      // The Dart main thread to render into an Texture RBO which can then accessed from this thread and passed to the Flutter Engine
       if (arguments) {
           auto texture_id = arguments->find(EncodableValue("openGLContext"));
           if (texture_id != arguments->end()) {
@@ -179,7 +190,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
       }
       else
       {
-        result->Error("no texture id","no texture id");
+        result->Error("No OpenGL context","No OpenGL context received by the native part of FlutterGL.iniOpenGL");
         return;
       }
 
@@ -212,19 +223,13 @@ void FlutterWebGlPlugin::HandleMethodCall(
           return;
       }
 
-      // auto context = eglCreateContext(
-      //     display,
-      //     config,
-      //     EGL_NO_CONTEXT,
-      //     nullptr
-      //     );
-
       const EGLint surfaceAttributes[] = {
         EGL_WIDTH, 16,
         EGL_HEIGHT, 16,
         EGL_NONE
       };
 
+      // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
       auto surface = eglCreatePbufferSurface(display, config, surfaceAttributes);
       
       eglMakeCurrent(display, surface, surface, context);
@@ -239,7 +244,9 @@ void FlutterWebGlPlugin::HandleMethodCall(
 
       std::cerr << v << std::endl << r << std::endl << v2 << std::endl;
 
-      result->Success();
+        auto response = flutter::EncodableValue((int64_t) context );
+        result->Success(response);
+        return;
   }
   else if (method_call.method_name().compare("createTexture") == 0) {
       int width = 0;
