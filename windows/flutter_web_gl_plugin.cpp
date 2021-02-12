@@ -22,71 +22,71 @@ namespace {
 using flutter::EncodableMap;
 using flutter::EncodableValue;
 
-void draw();
-
-GLuint LoadShader ( GLenum type, const char *shaderSrc )
-{
-   GLuint shader;
-   GLint compiled;
-
-   // Create the shader object
-   shader = glCreateShader ( type );
-
-   if ( shader == 0 )
-   {
-      return 0;
-   }
-
-   // Load the shader source
-   glShaderSource ( shader, 1, &shaderSrc, NULL );
-
-   // Compile the shader
-   glCompileShader ( shader );
-
-   // Check the compile status
-   glGetShaderiv ( shader, GL_COMPILE_STATUS, &compiled );
-
-   if ( !compiled )
-   {
-      GLint infoLen = 0;
-
-      glGetShaderiv ( shader, GL_INFO_LOG_LENGTH, &infoLen );
-
-      if ( infoLen > 1 )
-      {
-         char *infoLog =(char*) malloc ( sizeof ( char ) * infoLen );
-
-         glGetShaderInfoLog ( shader, infoLen, NULL, infoLog );
-         std::cerr<< "Error compiling shader:\n%s\n" << infoLog << std::endl;
-
-         free ( infoLog );
-      }
-
-      glDeleteShader ( shader );
-      return 0;
-   }
-
-   return shader;
-
-}  
-
-  class OpenGLTexture
+  class OpenGLException
   {
   public:
-    OpenGLTexture(size_t width, size_t height);
-    virtual ~OpenGLTexture();
+      OpenGLException(char* message, int error);
+      GLint error = 0;;
+      char* message ="";
+  };
+
+  OpenGLException::OpenGLException(char* message, int error)
+  {
+      this->error = error;
+      message = message;
+  }
+
+  class FlutterGLTexture;
+
+  typedef  std::map<int64_t, std::unique_ptr<FlutterGLTexture>> TextureMap;
+
+  class FlutterWebGlPlugin : public flutter::Plugin {
+  public:
+      static void RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar);
+
+      FlutterWebGlPlugin(flutter::TextureRegistrar* textures);
+
+      virtual ~FlutterWebGlPlugin();
+
+      static flutter::TextureRegistrar* textureRegistrar;
+
+
+  private:
+      // Called when a method is called on this plugin's channel from Dart.
+      void HandleMethodCall(
+          const flutter::MethodCall<flutter::EncodableValue>& method_call,
+          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+
+      TextureMap flutterGLTextures; // stores all created Textures
+  };
+
+  flutter::TextureRegistrar* FlutterWebGlPlugin::textureRegistrar;
+
+
+  class FlutterGLTexture
+  {
+  public:
+    FlutterGLTexture(GLsizei width, GLsizei height);
+    virtual ~FlutterGLTexture();
     const FlutterDesktopPixelBuffer *CopyPixelBuffer(size_t width, size_t height);
 
-    std::unique_ptr<FlutterDesktopPixelBuffer> buffer;
+   std::unique_ptr<FlutterDesktopPixelBuffer> buffer;
+    GLuint fbo;
+    GLuint rbo;
+    int64_t flutterTextureId;
+    std::unique_ptr<flutter::TextureVariant> flutterTexture;
   private:
     std::unique_ptr<uint8_t> pixels;
     size_t request_count_ = 0;
+
+
   }; 
+
+
   
-  
-  OpenGLTexture::OpenGLTexture(size_t width, size_t height)
+  FlutterGLTexture::FlutterGLTexture(GLsizei width, GLsizei height)
   {
-    size_t size = width * height * 4;
+    int64_t size = width * height * 4;
 
     pixels.reset(new uint8_t[size]);
 
@@ -94,35 +94,62 @@ GLuint LoadShader ( GLenum type, const char *shaderSrc )
     buffer->buffer = pixels.get();
     buffer->width = width;
     buffer->height = height;
-    memset(pixels.get(), 0xff, size);
+    memset(pixels.get(), 0x00, size);
+
+
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);  
+
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+    auto error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        std::cerr << "GlError while allocating Renderbuffer" << error << std::endl;
+        throw new OpenGLException("GlError while allocating Renderbuffer", error);
+    }
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,rbo);
+    auto frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cerr << "Framebuffer error" << frameBufferCheck << std::endl;
+        throw new OpenGLException("Framebuffer Error while creating Texture", frameBufferCheck);
+    }
+
+    error = glGetError() ;
+    if( error != GL_NO_ERROR)
+    {
+      std::cerr << "GlError" << error << std::endl;
+    }
+
+    flutterTexture = std::make_unique<flutter::TextureVariant>(flutter::PixelBufferTexture(
+        [this](size_t width, size_t height) -> const FlutterDesktopPixelBuffer* {
+        return CopyPixelBuffer(width, height);
+    }));
+
+    flutterTextureId = FlutterWebGlPlugin::textureRegistrar->RegisterTexture(flutterTexture.get());
 
   }
 
-  const FlutterDesktopPixelBuffer *OpenGLTexture::CopyPixelBuffer(size_t width, size_t height)
+  const FlutterDesktopPixelBuffer *FlutterGLTexture::CopyPixelBuffer(size_t width, size_t height)
   {
     return buffer.get();
   }
 
-    OpenGLTexture::~OpenGLTexture() {}
+ FlutterGLTexture::~FlutterGLTexture() {
+     FlutterWebGlPlugin::textureRegistrar->UnregisterTexture(flutterTextureId);
+     glDeleteRenderbuffers(1, &rbo);
+     glDeleteFramebuffers(1, &fbo);
+     pixels.reset();
+     buffer.reset();
+ }
 
-class FlutterWebGlPlugin : public flutter::Plugin {
- public:
-  static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
 
-  FlutterWebGlPlugin(flutter::TextureRegistrar *textures);
 
-  virtual ~FlutterWebGlPlugin();
 
- private:
-  // Called when a method is called on this plugin's channel from Dart.
-  void HandleMethodCall(
-      const flutter::MethodCall<flutter::EncodableValue> &method_call,
-      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
-
-  flutter::TextureRegistrar *textures_;
-  std::unique_ptr<flutter::TextureVariant> texture_;
-  std::unique_ptr<OpenGLTexture> _texture;   
-};
+ 
 
 // static
 void FlutterWebGlPlugin::RegisterWithRegistrar(
@@ -141,7 +168,9 @@ void FlutterWebGlPlugin::RegisterWithRegistrar(
   registrar->AddPlugin(std::move(plugin));
 }
 
-FlutterWebGlPlugin::FlutterWebGlPlugin(flutter::TextureRegistrar *textures) : textures_(textures) {}
+FlutterWebGlPlugin::FlutterWebGlPlugin(flutter::TextureRegistrar *textures)  {
+    textureRegistrar = textures;
+}
 
 FlutterWebGlPlugin::~FlutterWebGlPlugin() {}
 
@@ -244,9 +273,11 @@ void FlutterWebGlPlugin::HandleMethodCall(
 
       std::cerr << v << std::endl << r << std::endl << v2 << std::endl;
 
-        auto response = flutter::EncodableValue((int64_t) context );
-        result->Success(response);
-        return;
+      /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
+      /// from Dart Isolates.
+      auto response = flutter::EncodableValue((int64_t) context );
+      result->Success(response);
+      return;
   }
   else if (method_call.method_name().compare("createTexture") == 0) {
       int width = 0;
@@ -277,59 +308,36 @@ void FlutterWebGlPlugin::HandleMethodCall(
         return;
       }
 
-      unsigned int fbo;
-      glGenFramebuffers(1, &fbo);
-      glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+      std::unique_ptr<FlutterGLTexture> flutterGLTexture;
 
-      unsigned int rbo;
-      glGenRenderbuffers(1, &rbo);
-      glBindRenderbuffer(GL_RENDERBUFFER, rbo);  
-
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
-      auto error = glGetError();
-      if (error != GL_NO_ERROR)
+      try
       {
-          std::cerr << "GlError while allocating Renderbuffer" << error << std::endl;
+          flutterGLTexture = std::make_unique<FlutterGLTexture>(width, height);
       }
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,rbo);
-      auto frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-      if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE)
+      catch (OpenGLException ex)
       {
-          std::cerr << "Framebuffer error" << frameBufferCheck << std::endl;
+          result->Error(ex.message + ':' + std::to_string(ex.error));
       }
-
-      error = glGetError() ;
-      if( error != GL_NO_ERROR)
-      {
-        std::cerr << "GlError" << error << std::endl;
-      }
-
-      _texture = std::make_unique<OpenGLTexture>(width, height);
-      texture_ = std::make_unique<flutter::TextureVariant>(flutter::PixelBufferTexture(
-        [this](size_t width, size_t height) -> const FlutterDesktopPixelBuffer * {
-          return _texture->CopyPixelBuffer(width, height);
-        }));
       
-
-      int64_t texture_id = textures_->RegisterTexture(texture_.get());
+      flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
+          
       auto response = flutter::EncodableValue(flutter::EncodableMap{
           {flutter::EncodableValue("textureId"),
-           flutter::EncodableValue(texture_id)},
+           flutter::EncodableValue(flutterGLTexture->flutterTextureId)},
           {flutter::EncodableValue("rbo"),
-           flutter::EncodableValue((int64_t) rbo) }
+           flutter::EncodableValue((int64_t) flutterGLTexture->rbo) }
          }
       );
 
       result->Success(response);
-      std::cerr << "Created a new texture " << width << "x" << height << "openGL ID" << rbo << std::endl;
+      std::cerr << "Created a new texture " << width << "x" << height << "openGL ID" << flutterGLTexture->rbo << std::endl;
   }
   else if (method_call.method_name().compare("updateTexture") == 0) {
-    // TODO: check if id is valid
-      int64_t id =0;
+      int64_t textureId =0;
       if (arguments) {
-          auto texture_id = arguments->find(EncodableValue("textureId"));
-          if (texture_id != arguments->end()) {
-              id = std::get<std::int64_t>(texture_id->second);
+          auto findResult = arguments->find(EncodableValue("textureId"));
+          if (findResult != arguments->end()) {
+              textureId = std::get<std::int64_t>(findResult->second);
           }
       }
       else
@@ -338,12 +346,49 @@ void FlutterWebGlPlugin::HandleMethodCall(
         return;
       }
 
-       glReadPixels(0, 0, (GLsizei)_texture->buffer->width, (GLsizei)_texture->buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)_texture->buffer->buffer);
-       textures_->MarkTextureFrameAvailable(id);
+      // Check if the received ID is registered
+      if (flutterGLTextures.find(textureId) == flutterGLTextures.end())
+      {
+          result->Error("Invalid texture ID", "Invalid Texture ID: " + std::to_string(textureId));
+          return;
+      }
+
+      auto currentTexture = flutterGLTextures[textureId].get();
+      glBindRenderbuffer(GL_RENDERBUFFER, currentTexture->rbo);
+
+       glReadPixels(0, 0, (GLsizei)currentTexture->buffer->width, (GLsizei)currentTexture->buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)currentTexture->buffer->buffer);
+       textureRegistrar->MarkTextureFrameAvailable(textureId);
 
        result->Success();
   }
-   else {
+  else if (method_call.method_name().compare("deleteTexture") == 0) {
+  int64_t textureId = 0;
+  if (arguments) {
+      auto id_iterator = arguments->find(EncodableValue("textureId"));
+      if (id_iterator != arguments->end()) {
+          textureId = std::get<std::int64_t>(id_iterator->second);
+      }
+  }
+  else
+  {
+      result->Error("no texture id", "no texture id");
+      return;
+  }
+
+  auto findResult = flutterGLTextures.find(textureId);
+  // Check if the received ID is registered
+  if ( findResult == flutterGLTextures.end())
+  {
+      result->Error("Invalid texture ID", "Invalid Texture ID: " + std::to_string(textureId));
+      return;
+  }
+
+  flutterGLTextures[textureId].release();
+  flutterGLTextures.erase(textureId);
+
+  result->Success();
+  }
+  else {
     result->NotImplemented();
   }
 }

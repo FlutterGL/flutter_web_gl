@@ -117,7 +117,13 @@ class FlutterWebGL {
     return result["textureId"];
   }
 
+  //TODO has to be clarified if we have to bind the buffer here or not (to late right now to think)
   static Future<void> updateTexture(int textureId) async {
     await _channel.invokeMethod('updateTexture', {"textureId": textureId});
+  }
+
+  //TODO has to be clarified if we have to unbind anything at this point.
+  static Future<void> deleteTexture(int textureId) async {
+    await _channel.invokeMethod('deleteTexture', {"textureId": textureId});
   }
 }

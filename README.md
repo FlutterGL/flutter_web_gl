@@ -47,7 +47,7 @@ Currently, I see the following tasks that need to be solved.
     - [ ] iOS (it seems that the main Angle project hasn't caught up with its fork [metalangle](https://github.com/kakashidinho/metalangle) so we probably should use this one)
 - [x] Create a Dart-FFI layer for OpenGL ES 3.0 API and EGL 1.5
 - [ ] Implement native plugin parts that register and update the textures
-    - [x] Windows (handling of multiple Textures is currently missing) 
+    - [x] Windows 
     - [ ] Android
     - [ ] iOS
     - [ ] macOS
