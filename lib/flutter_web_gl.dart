@@ -10,6 +10,20 @@ import 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
 export 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
+class FlutterGLTexture {
+  final int textureId;
+  final int rboId;
+  FlutterGLTexture(this.textureId, this.rboId);
+
+  static FlutterGLTexture fromMap(Map<String, Object> map) {
+    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int);
+  }
+
+  Map<String, int> toMap() {
+    return {'textureId': textureId, 'rbo': rboId};
+  }
+}
+
 class FlutterWebGL {
   static const MethodChannel _channel = const MethodChannel('flutter_web_gl');
 

@@ -318,19 +318,21 @@ void FlutterWebGlPlugin::HandleMethodCall(
       {
           result->Error(ex.message + ':' + std::to_string(ex.error));
       }
-      
-      flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
-          
+      auto rbo = (int64_t)flutterGLTexture->rbo;
+
       auto response = flutter::EncodableValue(flutter::EncodableMap{
           {flutter::EncodableValue("textureId"),
            flutter::EncodableValue(flutterGLTexture->flutterTextureId)},
           {flutter::EncodableValue("rbo"),
-           flutter::EncodableValue((int64_t) flutterGLTexture->rbo) }
-         }
+           flutter::EncodableValue( rbo)}
+          }
       );
 
+      flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
+          
+
       result->Success(response);
-      std::cerr << "Created a new texture " << width << "x" << height << "openGL ID" << flutterGLTexture->rbo << std::endl;
+      std::cerr << "Created a new texture " << width << "x" << height << "openGL ID" << rbo << std::endl;
   }
   else if (method_call.method_name().compare("updateTexture") == 0) {
       int64_t textureId =0;

@@ -3,6 +3,7 @@
 
 .packages
 .pub/
+.vs/
 
 build/
 flutter_webgl.code-workspace
