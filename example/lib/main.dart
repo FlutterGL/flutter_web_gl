@@ -18,8 +18,9 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  FlutterGLTexture? texture1;
-  FlutterGLTexture? texture2;
+  int shaderProgram = 0;
+  final numTextures = 100;
+  final textures = <FlutterGLTexture>[];
 
   @override
   void initState() {
@@ -39,24 +40,41 @@ class _MyAppState extends State<MyApp> {
     FlutterWebGL.initOpenGL();
 
     try {
-      texture1 = await FlutterWebGL.createTexture(600, 400);
+      for (int i = 0; i < 100; i++) {
+        textures.add(await FlutterWebGL.createTexture(100, 100));
+      }
     } on PlatformException {
       print("failed to get texture id");
     }
 
-    try {
-      texture2 = await FlutterWebGL.createTexture(150, 100);
-    } on PlatformException {
-      print("failed to get texture id");
-    }
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
+    createShaderProgram();
+
+    /// Updating all Textues takes a slighllty less than 150ms
+    /// so we can't get much faster than this at the moment because it could happen that
+    /// the timer starts a new async function while the last one hasn't finished
+    /// which creates an OpenGL Exception
+    Timer.periodic(const Duration(milliseconds: 150), updateTextures);
+
+    // updateTextures(null);
     if (!mounted) return;
 
     setState(() {
       _platformVersion = platformVersion;
     });
+  }
+
+  static bool updating = false;
+
+  void updateTextures(Timer? _) async {
+    if (!updating) {
+      updating = true;
+      for (final t in textures) {
+        t.activate();
+        draw();
+        await t.signalNewFrameAvailable();
+      }
+      updating = false;
+    }
   }
 
   @override
@@ -67,41 +85,24 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
-          child: Column(
+        body: LayoutBuilder(builder: (context, constraints) {
+          final squareSize = constraints.maxWidth / 20;
+          return Wrap(
             children: [
-              Text('Running on: $_platformVersion\n'),
-              Container(
-                  color: Colors.white, width: 600, height: 400, child: Texture(textureId: texture1?.textureId ?? 0)),
-              MaterialButton(
-                onPressed: () {
-                  texture1?.activate();
-                  draw();
-                  texture1?.signalNewFrameAvailable();
-                },
-                color: Colors.grey,
-                child: Text('Draw'),
-              ),
-              Container(
-                  color: Colors.white, width: 300, height: 200, child: Texture(textureId: texture2?.textureId ?? 0)),
-              MaterialButton(
-                onPressed: () {
-                  texture2?.activate();
-                  draw();
-
-                  texture2?.signalNewFrameAvailable();
-                },
-                color: Colors.grey,
-                child: Text('Draw'),
-              ),
+              for (int i = 0; i < 200; i++)
+                if (textures.length > i % numTextures)
+                  Container(
+                      width: squareSize,
+                      height: squareSize,
+                      child: Texture(textureId: textures[i % numTextures].textureId)),
             ],
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
 
-  void draw() async {
+  void createShaderProgram() {
     final gl = FlutterWebGL.rawOpenGl;
 
     int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
@@ -141,11 +142,20 @@ class _MyAppState extends State<MyApp> {
     free(arrayPointer);
     free(sourceString);
 
-    final shaderProgram = gl.glCreateProgram();
+    shaderProgram = gl.glCreateProgram();
     gl.glAttachShader(shaderProgram, vertexShader);
     gl.glAttachShader(shaderProgram, fragmentShader);
     gl.glLinkProgram(shaderProgram);
 
+    gl.glDeleteShader(vertexShader);
+    gl.glDeleteShader(fragmentShader);
+    gl.glUseProgram(shaderProgram);
+  }
+
+  void draw() async {
+    final gl = FlutterWebGL.rawOpenGl;
+
+    int colorLocation = gl.glGetUniformLocation(shaderProgram, Utf8.toUtf8('color').cast());
     final randomColor = RandomColor();
 
     final bgColor = randomColor.randomColor(colorBrightness: ColorBrightness.dark);
@@ -153,14 +163,7 @@ class _MyAppState extends State<MyApp> {
     gl.glClearColor(bgColor.red.toDouble() / 255, bgColor.green.toDouble() / 255, bgColor.blue.toDouble() / 255, 1);
     gl.glClear(GL_COLOR_BUFFER_BIT);
 
-    gl.glUseProgram(shaderProgram);
-
-    var error = gl.glGetError();
-    int colorLocation = gl.glGetUniformLocation(shaderProgram, Utf8.toUtf8('color').cast());
-    error = gl.glGetError();
     final color = randomColor.randomColor(colorBrightness: ColorBrightness.light);
-    print(color);
-
     gl.glUniform4f(colorLocation, (color.red.toDouble() / 255), color.green.toDouble() / 255,
         color.blue.toDouble() / 255, color.alpha.toDouble() / 255);
 
@@ -173,54 +176,6 @@ class _MyAppState extends State<MyApp> {
     gl.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Pointer<Void>.fromAddress(0).cast());
     gl.glEnableVertexAttribArray(0);
     gl.glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    gl.glDeleteShader(vertexShader);
-    gl.glDeleteShader(fragmentShader);
-  }
-
-  void draw2() async {
-    final gl = FlutterWebGL.rawOpenGl;
-
-    int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
-    var sourceString = Utf8.toUtf8(vertexShaderSource);
-    var arrayPointer = allocate<Pointer<Int8>>();
-    arrayPointer.value = Pointer.fromAddress(sourceString.address);
-    gl.glShaderSource(vertexShader, 1, arrayPointer, nullptr);
-    gl.glCompileShader(vertexShader);
-    free(arrayPointer);
-    free(sourceString);
-
-    int fragmentShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
-    sourceString = Utf8.toUtf8(fragmentShaderSource2);
-    arrayPointer = allocate<Pointer<Int8>>();
-    arrayPointer.value = Pointer.fromAddress(sourceString.address);
-    gl.glShaderSource(fragmentShader, 1, arrayPointer, nullptr);
-    gl.glCompileShader(fragmentShader);
-    free(arrayPointer);
-    free(sourceString);
-
-    final shaderProgram = gl.glCreateProgram();
-    gl.glAttachShader(shaderProgram, vertexShader);
-    gl.glAttachShader(shaderProgram, fragmentShader);
-    gl.glLinkProgram(shaderProgram);
-
-    gl.glClearColor(0, 0, 1, 1);
-    gl.glClear(GL_COLOR_BUFFER_BIT);
-
-    gl.glUseProgram(shaderProgram);
-
-    final points = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
-    Pointer<Uint32> vbo = allocate();
-    gl.glGenBuffers(1, vbo);
-    gl.glBindBuffer(GL_ARRAY_BUFFER, vbo.value);
-    gl.glBufferData(GL_ARRAY_BUFFER, 36, floatListToArrayPointer(points).cast(), GL_STATIC_DRAW);
-
-    gl.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Pointer<Void>.fromAddress(0).cast());
-    gl.glEnableVertexAttribArray(0);
-    gl.glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    gl.glDeleteShader(vertexShader);
-    gl.glDeleteShader(fragmentShader);
   }
 }
 
@@ -242,16 +197,6 @@ const fragmentShaderSource = //
     'void main()\n' //
     '{\n' //
     '    FragColor = color;\n' //
-    '} \n'; //
-
-const fragmentShaderSource2 = //
-    '#version 300 es\n' //
-    'precision mediump float;\n'
-    'out vec4 FragColor;\n' //
-    '\n' //
-    'void main()\n' //
-    '{\n' //
-    '    FragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);\n' //
     '} \n'; //
 
 Pointer<Float> floatListToArrayPointer(List<double> list) {
