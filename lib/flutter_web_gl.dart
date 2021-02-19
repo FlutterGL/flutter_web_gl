@@ -10,6 +10,8 @@ import 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
 export 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
+part 'web_gl.dart';
+
 class FlutterGLTexture {
   final int textureId;
   final int rboId;
@@ -48,8 +50,8 @@ class FlutterWebGL {
   static LibOpenGLES? _libOpenGLES;
   static Pointer<Void> _display = nullptr;
   static late Pointer<Void> _config;
-  static late Pointer<Void> _baseAppContext;
-  static late Pointer<Void> _pluginContext;
+  static Pointer<Void> _baseAppContext = nullptr;
+  static Pointer<Void> _pluginContext = nullptr;
   static late Pointer<Void> _dummySurface;
   static int? _activeFramebuffer;
 
@@ -60,12 +62,17 @@ class FlutterWebGL {
     return _libOpenGLES ??= LibOpenGLES(DynamicLibrary.open(libPath));
   }
 
+  static RenderingContext getWebGLContext() {
+    assert(_baseAppContext != nullptr, "OpenGL isn't initialized! Please call FlutterWebGL.initOpenGL");
+    return RenderingContext._create(rawOpenGl, FlutterWebGL._baseAppContext.address);
+  }
+
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
 
-  static void initOpenGL() async {
+  static Future<void> initOpenGL() async {
     /// make sure we don't call this twice
     if (_display != nullptr) {
       return;
