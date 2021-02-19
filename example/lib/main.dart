@@ -17,7 +17,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  int textureId = 0;
+  FlutterGLTexture? texture1;
+  FlutterGLTexture? texture2;
 
   @override
   void initState() {
@@ -37,11 +38,16 @@ class _MyAppState extends State<MyApp> {
     FlutterWebGL.initOpenGL();
 
     try {
-      textureId = await FlutterWebGL.createTexture(600, 400);
+      texture1 = await FlutterWebGL.createTexture(600, 400);
     } on PlatformException {
       print("failed to get texture id");
     }
 
+    try {
+      texture2 = await FlutterWebGL.createTexture(150, 100);
+    } on PlatformException {
+      print("failed to get texture id");
+    }
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
@@ -64,9 +70,26 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             children: [
               Text('Running on: $_platformVersion\n'),
-              SizedBox(width: 600, height: 400, child: Texture(textureId: textureId)),
+              Container(
+                  color: Colors.white, width: 600, height: 400, child: Texture(textureId: texture1?.textureId ?? 0)),
               MaterialButton(
-                onPressed: draw,
+                onPressed: () {
+                  texture1?.activate();
+                  draw();
+                  texture1?.signalNewFrameAvailable();
+                },
+                color: Colors.grey,
+                child: Text('Draw'),
+              ),
+              Container(
+                  color: Colors.white, width: 300, height: 200, child: Texture(textureId: texture2?.textureId ?? 0)),
+              MaterialButton(
+                onPressed: () {
+                  texture2?.activate();
+                  draw2();
+
+                  texture2?.signalNewFrameAvailable();
+                },
                 color: Colors.grey,
                 child: Text('Draw'),
               ),
@@ -103,6 +126,51 @@ class _MyAppState extends State<MyApp> {
     gl.glAttachShader(shaderProgram, fragmentShader);
     gl.glLinkProgram(shaderProgram);
 
+    gl.glClearColor(1, 1, 0, 1);
+    gl.glClear(GL_COLOR_BUFFER_BIT);
+
+    gl.glUseProgram(shaderProgram);
+
+    final points = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+    Pointer<Uint32> vbo = allocate();
+    gl.glGenBuffers(1, vbo);
+    gl.glBindBuffer(GL_ARRAY_BUFFER, vbo.value);
+    gl.glBufferData(GL_ARRAY_BUFFER, 36, floatListToArrayPointer(points).cast(), GL_STATIC_DRAW);
+
+    gl.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Pointer<Void>.fromAddress(0).cast());
+    gl.glEnableVertexAttribArray(0);
+    gl.glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    gl.glDeleteShader(vertexShader);
+    gl.glDeleteShader(fragmentShader);
+  }
+
+  void draw2() async {
+    final gl = FlutterWebGL.rawOpenGl;
+
+    int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
+    var sourceString = Utf8.toUtf8(vertexShaderSource);
+    var arrayPointer = allocate<Pointer<Int8>>();
+    arrayPointer.value = Pointer.fromAddress(sourceString.address);
+    gl.glShaderSource(vertexShader, 1, arrayPointer, nullptr);
+    gl.glCompileShader(vertexShader);
+    free(arrayPointer);
+    free(sourceString);
+
+    int fragmentShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
+    sourceString = Utf8.toUtf8(fragmentShaderSource2);
+    arrayPointer = allocate<Pointer<Int8>>();
+    arrayPointer.value = Pointer.fromAddress(sourceString.address);
+    gl.glShaderSource(fragmentShader, 1, arrayPointer, nullptr);
+    gl.glCompileShader(fragmentShader);
+    free(arrayPointer);
+    free(sourceString);
+
+    final shaderProgram = gl.glCreateProgram();
+    gl.glAttachShader(shaderProgram, vertexShader);
+    gl.glAttachShader(shaderProgram, fragmentShader);
+    gl.glLinkProgram(shaderProgram);
+
     gl.glClearColor(0, 0, 1, 1);
     gl.glClear(GL_COLOR_BUFFER_BIT);
 
@@ -120,8 +188,6 @@ class _MyAppState extends State<MyApp> {
 
     gl.glDeleteShader(vertexShader);
     gl.glDeleteShader(fragmentShader);
-
-    await FlutterWebGL.updateTexture(textureId);
   }
 }
 
@@ -142,6 +208,16 @@ const fragmentShaderSource = //
     'void main()\n' //
     '{\n' //
     '    FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n' //
+    '} \n'; //
+
+const fragmentShaderSource2 = //
+    '#version 300 es\n' //
+    'precision mediump float;\n'
+    'out vec4 FragColor;\n' //
+    '\n' //
+    'void main()\n' //
+    '{\n' //
+    '    FragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);\n' //
     '} \n'; //
 
 Pointer<Float> floatListToArrayPointer(List<double> list) {

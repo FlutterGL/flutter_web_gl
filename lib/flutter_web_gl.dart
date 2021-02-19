@@ -13,14 +13,32 @@ export 'package:opengl_es_bindings/opengl_es_bindings.dart';
 class FlutterGLTexture {
   final int textureId;
   final int rboId;
-  FlutterGLTexture(this.textureId, this.rboId);
+  final int fboId;
+  final int width;
+  final int height;
+  FlutterGLTexture(this.textureId, this.rboId, this.fboId, this.width, this.height);
 
-  static FlutterGLTexture fromMap(Map<String, Object> map) {
-    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int);
+  static FlutterGLTexture fromMap(dynamic map, int fboId, int width, int height) {
+    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int, fboId, width, height);
   }
 
   Map<String, int> toMap() {
     return {'textureId': textureId, 'rbo': rboId};
+  }
+
+  /// Whenever you finished your rendering you have to call this function to signal
+  /// the Flutterengine that it can display the rendering
+  /// Despite this being an asyc function it probably doesn't make sense to await it
+  Future<void> signalNewFrameAvailable() async {
+    await FlutterWebGL.updateTexture(this);
+  }
+
+  /// As you can have multiple Texture objects, but WebGL allways draws in the currently
+  /// active one you have to call this function if you use more than one Textureobject before
+  /// you can start rendering on it. If you forget it you will render into the wrong Texture.
+  void activate() {
+    FlutterWebGL.activateTexture(this);
+    FlutterWebGL.rawOpenGl.glViewport(0, 0, width, height);
   }
 }
 
@@ -33,6 +51,7 @@ class FlutterWebGL {
   static late Pointer<Void> _baseAppContext;
   static late Pointer<Void> _pluginContext;
   static late Pointer<Void> _dummySurface;
+  static int? _activeFramebuffer;
 
   static LibOpenGLES get rawOpenGl {
     final libPath = resolveDylibPath(
@@ -110,34 +129,59 @@ class FlutterWebGL {
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
   }
 
-  static Future<int> createTexture(int width, int height) async {
+  static Future<FlutterGLTexture> createTexture(int width, int height) async {
     final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height});
 
     Pointer<Uint32> fbo = allocate();
     rawOpenGl.glGenFramebuffers(1, fbo);
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, fbo.value);
 
-    print(rawOpenGl.glGetError());
-    final rbo = result['rbo'] as int;
-    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    final newTexture = FlutterGLTexture.fromMap(result, fbo.value, width, height);
 
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
+    print(rawOpenGl.glGetError());
+    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
+
+    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
     var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
       print("Framebuffer (color) check failed: $frameBufferCheck");
     }
-    rawOpenGl.glViewport(0, 0, 600, 400);
+    rawOpenGl.glViewport(0, 0, width, height);
+    _activeFramebuffer = fbo.value;
 
-    return result["textureId"];
+    free(fbo);
+    return newTexture;
   }
 
-  //TODO has to be clarified if we have to bind the buffer here or not (to late right now to think)
-  static Future<void> updateTexture(int textureId) async {
-    await _channel.invokeMethod('updateTexture', {"textureId": textureId});
+  static Future<void> updateTexture(FlutterGLTexture texture) async {
+    assert(_activeFramebuffer != null, 'There is no active FlutterGL Texture to update');
+    await _channel.invokeMethod('updateTexture', {"textureId": texture.textureId});
   }
 
-  //TODO has to be clarified if we have to unbind anything at this point.
-  static Future<void> deleteTexture(int textureId) async {
-    await _channel.invokeMethod('deleteTexture', {"textureId": textureId});
+  static Future<void> deleteTexture(FlutterGLTexture texture) async {
+    assert(_activeFramebuffer != null, 'There is no active FlutterGL Texture to delete');
+    if (_activeFramebuffer == texture.fboId) {
+      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, 0);
+
+      Pointer<Uint32> fbo = allocate();
+      fbo.value = texture.fboId;
+      rawOpenGl.glDeleteBuffers(1, fbo);
+      free(fbo);
+    }
+    await _channel.invokeMethod('deleteTexture', {"textureId": texture.textureId});
+  }
+
+  static void activateTexture(FlutterGLTexture texture) {
+    rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, texture.fboId);
+    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, texture.rboId);
+    printOpenGLError('activateTextue ${texture.textureId}');
+    _activeFramebuffer = texture.fboId;
+  }
+
+  static void printOpenGLError(String message) {
+    var glGetError = rawOpenGl.glGetError();
+    if (glGetError != GL_NO_ERROR) {
+      print('$message: ${glGetError}');
+    }
   }
 }

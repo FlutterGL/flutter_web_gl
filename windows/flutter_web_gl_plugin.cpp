@@ -356,7 +356,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
       }
 
       auto currentTexture = flutterGLTextures[textureId].get();
-      glBindRenderbuffer(GL_RENDERBUFFER, currentTexture->rbo);
+      glBindFramebuffer(GL_FRAMEBUFFER, currentTexture->fbo);
 
        glReadPixels(0, 0, (GLsizei)currentTexture->buffer->width, (GLsizei)currentTexture->buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)currentTexture->buffer->buffer);
        textureRegistrar->MarkTextureFrameAvailable(textureId);
