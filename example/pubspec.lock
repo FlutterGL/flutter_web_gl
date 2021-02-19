@@ -119,10 +119,12 @@ packages:
   random_color:
     dependency: "direct main"
     description:
-      name: random_color
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.5"
+      path: "."
+      ref: HEAD
+      resolved-ref: "56d630a3b23dbbbc33b83b29d71cbb757e6ce37f"
+      url: "https://github.com/knezzz/RandomColor"
+    source: git
+    version: "2.0.0-nullsafety.0"
   sky_engine:
     dependency: transitive
     description: flutter

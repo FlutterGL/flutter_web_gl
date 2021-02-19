@@ -5,6 +5,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_gl/flutter_web_gl.dart';
+import 'package:random_color/random_color.dart';
 
 void main() {
   runApp(MyApp());
@@ -86,7 +87,7 @@ class _MyAppState extends State<MyApp> {
               MaterialButton(
                 onPressed: () {
                   texture2?.activate();
-                  draw2();
+                  draw();
 
                   texture2?.signalNewFrameAvailable();
                 },
@@ -118,6 +119,25 @@ class _MyAppState extends State<MyApp> {
     arrayPointer.value = Pointer.fromAddress(sourceString.address);
     gl.glShaderSource(fragmentShader, 1, arrayPointer, nullptr);
     gl.glCompileShader(fragmentShader);
+    final compiled = allocate<Int32>();
+    gl.glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, compiled);
+    if (compiled.value == 0) {
+      final infoLen = allocate<Int32>();
+
+      gl.glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, infoLen);
+
+      if (infoLen.value > 1) {
+        final infoLog = allocate<Int8>(count: infoLen.value);
+
+        gl.glGetShaderInfoLog(fragmentShader, infoLen.value, nullptr, infoLog);
+        print("Error compiling shader:\n${Utf8.fromUtf8(infoLog.cast())}");
+
+        free(infoLog);
+      }
+
+      gl.glDeleteShader(fragmentShader);
+      return;
+    }
     free(arrayPointer);
     free(sourceString);
 
@@ -126,10 +146,23 @@ class _MyAppState extends State<MyApp> {
     gl.glAttachShader(shaderProgram, fragmentShader);
     gl.glLinkProgram(shaderProgram);
 
-    gl.glClearColor(1, 1, 0, 1);
+    final randomColor = RandomColor();
+
+    final bgColor = randomColor.randomColor(colorBrightness: ColorBrightness.dark);
+
+    gl.glClearColor(bgColor.red.toDouble() / 255, bgColor.green.toDouble() / 255, bgColor.blue.toDouble() / 255, 1);
     gl.glClear(GL_COLOR_BUFFER_BIT);
 
     gl.glUseProgram(shaderProgram);
+
+    var error = gl.glGetError();
+    int colorLocation = gl.glGetUniformLocation(shaderProgram, Utf8.toUtf8('color').cast());
+    error = gl.glGetError();
+    final color = randomColor.randomColor(colorBrightness: ColorBrightness.light);
+    print(color);
+
+    gl.glUniform4f(colorLocation, (color.red.toDouble() / 255), color.green.toDouble() / 255,
+        color.blue.toDouble() / 255, color.alpha.toDouble() / 255);
 
     final points = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
     Pointer<Uint32> vbo = allocate();
@@ -203,11 +236,12 @@ const vertexShaderSource = //
 const fragmentShaderSource = //
     '#version 300 es\n' //
     'precision mediump float;\n'
+    'uniform vec4 color;\n'
     'out vec4 FragColor;\n' //
     '\n' //
     'void main()\n' //
     '{\n' //
-    '    FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n' //
+    '    FragColor = color;\n' //
     '} \n'; //
 
 const fragmentShaderSource2 = //

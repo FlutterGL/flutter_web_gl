@@ -10,7 +10,8 @@ environment:
 
 dependencies:
   ffi: 0.2.0-nullsafety.1
-  random_color: 1.0.5
+  random_color: 
+    git: https://github.com/knezzz/RandomColor
   flutter:
     sdk: flutter
 
