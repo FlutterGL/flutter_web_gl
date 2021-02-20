@@ -1613,7 +1613,11 @@ class RenderingContext {
 
   // void uniformMatrix3fv(UniformLocation? location, bool transpose, array);
 
-  void uniformMatrix4fv(UniformLocation? location, bool transpose, array) {}
+  /// be careful, data always has a length that is a multiple of 16
+  void uniformMatrix4fv(UniformLocation location, bool transpose, List<double> values) {
+    gl.glUniformMatrix4fv(location.locationId, values.length ~/ 16, transpose ? 1 : 0, floatListToArrayPointer(values));
+    checkError('uniformMatrix4fv');
+  }
 
   void useProgram(Program program) {
     gl.glUseProgram(program.programID);
