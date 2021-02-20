@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_gl/flutter_web_gl.dart';
 import 'package:flutter_web_gl_example/learn_gl.dart';
@@ -14,11 +15,11 @@ class MyApp extends StatefulWidget {
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   final textures = <FlutterGLTexture>[];
   int textureId = 0;
-  static const textureWidth = 1280;
-  static const textureHeight = 1280;
+  static const textureWidth = 1920;
+  static const textureHeight = 1080;
   static const aspect = textureWidth / textureHeight;
 
   @override
@@ -32,7 +33,7 @@ class _MyAppState extends State<MyApp> {
     await FlutterWebGL.initOpenGL();
 
     try {
-      textures.add(await FlutterWebGL.createTexture(1280, 1024));
+      textures.add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
     } on PlatformException {
       print("failed to get texture id");
     }
@@ -49,22 +50,51 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       textureId = textures[0].textureId;
     });
-    Timer.periodic(const Duration(milliseconds: 100), updateTexture);
+    // timer = Timer.periodic(const Duration(milliseconds: 16), updateTexture);
+    ticker = createTicker(updateTexture);
+    ticker.start();
   }
 
+  Timer? timer;
+  Stopwatch stopwatch = Stopwatch();
+
+  late Ticker ticker;
   static bool updating = false;
   int animationCounter = 0;
-
-  void updateTexture(Timer _) async {
+  int totalTime = 0;
+  int iterationCount = 60;
+  int framesOver = 0;
+  void updateTexture(_) async {
     if (textureId == 0) return;
     if (!updating) {
       updating = true;
+      stopwatch.reset();
+      stopwatch.start();
       textures[0].activate();
       lesson?.animate(animationCounter += 2);
-      lesson?.drawScene(0, 0, aspect);
+      lesson?.drawScene(-1, 0, aspect);
       await textures[0].signalNewFrameAvailable();
+      stopwatch.stop();
+      totalTime += stopwatch.elapsedMilliseconds;
+      if (stopwatch.elapsedMilliseconds > 16) {
+        framesOver++;
+      }
+      if (--iterationCount == 0) {
+        print('Time: ${totalTime / 60} - Framesover $framesOver');
+        totalTime = 0;
+        iterationCount = 60;
+        framesOver = 0;
+      }
+      updating = false;
+    } else {
+      print('Too slow');
     }
-    updating = false;
+  }
+
+  void dispose() {
+    ticker.dispose();
+    timer?.cancel();
+    super.dispose();
   }
 
   @override
