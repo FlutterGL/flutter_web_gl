@@ -1135,13 +1135,22 @@ class RenderingContext {
 
   // void blendFuncSeparate(int srcRGB, int dstRGB, int srcAlpha, int dstAlpha);
 
-  void bufferData<T extends NativeType>(int target, List data, int usage) {
+  void bufferData<T extends Object>(int target, List<T> data, int usage, [Type? nativeType]) {
     late Pointer<Void> nativeData;
     late int size;
-    switch (T) {
+    final type = nativeType != null ? nativeType : T;
+    switch (type) {
+      case double:
+        nativeData = floatListToArrayPointer(data as List<double>).cast();
+        size = data.length * sizeOf<Float>();
+        break;
       case Float:
         nativeData = floatListToArrayPointer(data as List<double>).cast();
         size = data.length * sizeOf<Float>();
+        break;
+      case int:
+        nativeData = int32ListToArrayPointer(data as List<int>).cast();
+        size = data.length * sizeOf<Int32>();
         break;
       case Int32:
         nativeData = int32ListToArrayPointer(data as List<int>).cast();
@@ -1270,15 +1279,24 @@ class RenderingContext {
 
   // void detachShader(Program program, Shader shader);
 
-  // void disable(int cap);
+  void disable(int cap) {
+    gl.glDisable(cap);
+    checkError('disable');
+  }
 
   // void disableVertexAttribArray(int index);
 
-  // void drawArrays(int mode, int first, int count);
+  void drawArrays(int mode, int first, int count) {
+    gl.glDrawArrays(mode, first, count);
+    checkError('drawArrays');
+  }
 
   // void drawElements(int mode, int count, int type, int offset);
 
-  // void enable(int cap);
+  void enable(int cap) {
+    gl.glEnable(cap);
+    checkError('enable');
+  }
 
   void enableVertexAttribArray(int index) {
     gl.glEnableVertexAttribArray(index);
@@ -1304,10 +1322,11 @@ class RenderingContext {
   // List<Shader>? getAttachedShaders(Program program);
 
   int getAttribLocation(Program program, String name) {
-    final location = tempInt8;
-    gl.glGetAttribLocation(program.programID, location);
-    checkError('getProgramParameter');
-    return location.value;
+    final locationName = Utf8.toUtf8(name);
+    final location = gl.glGetAttribLocation(program.programID, locationName.cast());
+    checkError('getAttribLocation');
+    free(locationName);
+    return location;
   }
   // Object? getBufferParameter(int target, int pname);
 
@@ -1352,10 +1371,11 @@ class RenderingContext {
   // Object? getUniform(Program program, UniformLocation location);
 
   UniformLocation getUniformLocation(Program program, String name) {
-    final location = tempInt8;
-    gl.glGetAttribLocation(program.programID, location);
+    final locationName = Utf8.toUtf8(name);
+    final location = gl.glGetUniformLocation(program.programID, locationName.cast());
     checkError('getProgramParameter');
-    return UniformLocation._create(location.value);
+    free(locationName);
+    return UniformLocation._create(location);
   }
 
   // Object? getVertexAttrib(int index, int pname);
@@ -1593,7 +1613,7 @@ class RenderingContext {
 
   // void uniformMatrix3fv(UniformLocation? location, bool transpose, array);
 
-  // void uniformMatrix4fv(UniformLocation? location, bool transpose, array);
+  void uniformMatrix4fv(UniformLocation? location, bool transpose, array) {}
 
   void useProgram(Program program) {
     gl.glUseProgram(program.programID);
@@ -1618,9 +1638,15 @@ class RenderingContext {
 
   // void vertexAttrib4fv(int indx, values);
 
-  // void vertexAttribPointer(int indx, int size, int type, bool normalized, int stride, int offset);
+  void vertexAttribPointer(int index, int size, int type, bool normalized, int stride, int offset) {
+    gl.glVertexAttribPointer(index, size, type, normalized ? 1 : 0, stride, Pointer<Void>.fromAddress(offset).cast());
+    checkError('vertexAttribPointer');
+  }
 
-  // void viewport(int x, int y, int width, int height);
+  void viewport(int x, int y, int width, int height) {
+    gl.glViewport(x, y, width, height);
+    checkError('viewPort');
+  }
 
   // void readPixels(int x, int y, int width, int height, int format, int type, TypedData pixels) {
   //   _readPixels(x, y, width, height, format, type, pixels);
