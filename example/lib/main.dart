@@ -39,7 +39,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     }
 
     resetLessons();
-    lesson = Lesson3();
+    lesson = Lesson4();
 
     /// Updating all Textues takes a slighllty less than 150ms
     /// so we can't get much faster than this at the moment because it could happen that
@@ -71,6 +71,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       stopwatch.reset();
       stopwatch.start();
       textures[0].activate();
+      lesson?.handleKeys();
       lesson?.animate(animationCounter += 2);
       lesson?.drawScene(-1, 0, aspect);
       await textures[0].signalNewFrameAvailable();
@@ -80,7 +81,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
         framesOver++;
       }
       if (--iterationCount == 0) {
-        print('Time: ${totalTime / 60} - Framesover $framesOver');
+        // print('Time: ${totalTime / 60} - Framesover $framesOver');
         totalTime = 0;
         iterationCount = 60;
         framesOver = 0;
@@ -106,9 +107,41 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           title: const Text('Plugin example app'),
         ),
         body: LayoutBuilder(builder: (context, constraints) {
-          return Container(child: Texture(textureId: textureId));
+          return GestureDetector(
+              onVerticalDragStart: verticalDragStart,
+              onVerticalDragUpdate: verticalDragUpdate,
+              onHorizontalDragStart: horizontalDragStart,
+              onHorizontalDragUpdate: horizontalDragUpdate,
+              child: Container(child: Texture(textureId: textureId)));
         }),
       ),
     );
+  }
+
+  double lastVertical = 0;
+
+  double lastHorizontal = 0;
+
+  void verticalDragStart(DragStartDetails details) {}
+
+  void verticalDragUpdate(DragUpdateDetails details) {
+    if (details.delta.dy < 0) {
+      movement = Directions.up;
+      print('up');
+    } else if (details.delta.dy > 0) {
+      print('down');
+      movement = Directions.down;
+    }
+  }
+
+  void horizontalDragStart(DragStartDetails details) {}
+  void horizontalDragUpdate(DragUpdateDetails details) {
+    if (details.delta.dx < 0) {
+      movement = Directions.right;
+      print('right');
+    } else if (details.delta.dx > 0) {
+      movement = Directions.left;
+      print('left');
+    }
   }
 }

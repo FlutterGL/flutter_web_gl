@@ -1291,7 +1291,12 @@ class RenderingContext {
     checkError('drawArrays');
   }
 
-  // void drawElements(int mode, int count, int type, int offset);
+  void drawElements(int mode, int count, int type, int offset) {
+    var offSetPointer = Pointer<Void>.fromAddress(offset);
+    gl.glDrawElements(mode, count, type, offSetPointer.cast());
+    checkError('drawElements');
+    free(offSetPointer);
+  }
 
   void enable(int cap) {
     gl.glEnable(cap);
@@ -1615,8 +1620,10 @@ class RenderingContext {
 
   /// be careful, data always has a length that is a multiple of 16
   void uniformMatrix4fv(UniformLocation location, bool transpose, List<double> values) {
-    gl.glUniformMatrix4fv(location.locationId, values.length ~/ 16, transpose ? 1 : 0, floatListToArrayPointer(values));
+    var arrayPointer = floatListToArrayPointer(values);
+    gl.glUniformMatrix4fv(location.locationId, values.length ~/ 16, transpose ? 1 : 0, arrayPointer);
     checkError('uniformMatrix4fv');
+    free(arrayPointer);
   }
 
   void useProgram(Program program) {
@@ -1643,8 +1650,10 @@ class RenderingContext {
   // void vertexAttrib4fv(int indx, values);
 
   void vertexAttribPointer(int index, int size, int type, bool normalized, int stride, int offset) {
-    gl.glVertexAttribPointer(index, size, type, normalized ? 1 : 0, stride, Pointer<Void>.fromAddress(offset).cast());
+    var offsetPointer = Pointer<Void>.fromAddress(offset);
+    gl.glVertexAttribPointer(index, size, type, normalized ? 1 : 0, stride, offsetPointer.cast());
     checkError('vertexAttribPointer');
+    free(offsetPointer);
   }
 
   void viewport(int x, int y, int width, int height) {

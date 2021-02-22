@@ -18,7 +18,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_web_gl/flutter_web_gl.dart';
 
-// part 'cube.dart';
+part 'cube.dart';
 part 'gl_program.dart';
 // part 'json_object.dart';
 // All the lessons
@@ -32,7 +32,7 @@ part 'lesson1.dart';
 // part 'lesson16.dart';
 part 'lesson2.dart';
 part 'lesson3.dart';
-// part 'lesson4.dart';
+part 'lesson4.dart';
 // part 'lesson5.dart';
 // part 'lesson6.dart';
 // part 'lesson7.dart';
@@ -40,10 +40,10 @@ part 'lesson3.dart';
 // part 'lesson9.dart';
 // // Math
 part 'matrix4.dart';
-// part 'pyramid.dart';
+part 'pyramid.dart';
 // part 'rectangle.dart';
 // // Some of our objects that we're going to support
-// part 'renderable.dart';
+part 'renderable.dart';
 // part 'sphere.dart';
 // part 'star.dart';
 
@@ -115,21 +115,26 @@ mvPushMatrix() => mvStack.add(new Matrix4.fromMatrix(mvMatrix));
 /// Pop the last matrix off the stack and set the Model View matrix.
 mvPopMatrix() => mvMatrix = mvStack.removeLast();
 
-// /// Handle common keys through callbacks, making lessons a little easier to code
-// void handleDirection({up(), down(), left(), right()}) {
-//   if (left != null && anyActive([KeyCode.A, KeyCode.LEFT])) {
-//     left();
-//   }
-//   if (right != null && anyActive([KeyCode.D, KeyCode.RIGHT])) {
-//     right();
-//   }
-//   if (down != null && anyActive([KeyCode.S, KeyCode.DOWN])) {
-//     down();
-//   }
-//   if (up != null && anyActive([KeyCode.W, KeyCode.UP])) {
-//     up();
-//   }
-// }
+enum Directions { none, left, right, up, down }
+
+Directions movement = Directions.none;
+
+/// Handle common keys through callbacks, making lessons a little easier to code
+void handleDirection({up()?, down()?, left()?, right()?}) {
+  if (movement == Directions.left) {
+    left?.call();
+  }
+  if (movement == Directions.right) {
+    right?.call();
+  }
+  if (movement == Directions.down) {
+    down?.call();
+  }
+  if (movement == Directions.up) {
+    up?.call();
+  }
+  movement = Directions.none;
+}
 
 /// The base for all Learn WebGL lessons.
 abstract class Lesson {
