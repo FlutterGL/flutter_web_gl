@@ -1160,6 +1160,7 @@ class RenderingContext {
         throw (OpenGLException('bufferData: unsupported native type $T', -1));
     }
     gl.glBufferData(target, size, nativeData, usage);
+    free(nativeData);
     checkError('bufferData');
   }
 

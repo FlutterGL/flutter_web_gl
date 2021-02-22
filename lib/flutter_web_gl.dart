@@ -153,6 +153,17 @@ class FlutterWebGL {
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
       print("Framebuffer (color) check failed: $frameBufferCheck");
     }
+
+    Pointer<Int32> depthBuffer = allocate();
+    rawOpenGl.glGenRenderbuffers(1, depthBuffer.cast());
+    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.value);
+    rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+
+    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer.value);
+    frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
+      print("Framebuffer (depth) check failed: $frameBufferCheck");
+    }
     rawOpenGl.glViewport(0, 0, width, height);
     _activeFramebuffer = fbo.value;
 

@@ -40,10 +40,12 @@ class GlProgram {
     for (String attrib in attributeNames) {
       int attributeLocation = gl.getAttribLocation(program, attrib);
       gl.enableVertexAttribArray(attributeLocation);
+      gl.checkError(attrib);
       attributes[attrib] = attributeLocation;
     }
     for (String uniform in uniformNames) {
       var uniformLocation = gl.getUniformLocation(program, uniform);
+      gl.checkError(uniform);
       uniforms[uniform] = uniformLocation;
     }
   }

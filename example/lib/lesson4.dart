@@ -52,7 +52,7 @@ class Lesson4 extends Lesson {
               gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
               vColor = aVertexColor;
           }
-        ''',
+      //   ''',
       ['aVertexPosition', 'aVertexColor'],
       ['uMVMatrix', 'uPMatrix'],
     );
