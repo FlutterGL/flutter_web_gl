@@ -698,7 +698,7 @@ class RenderingContext {
 
   // Sync? fenceSync(int condition, int flags);
 
-  // void framebufferTextureLayer(int target, int attachment, Texture? texture, int level, int layer);
+  // void framebufferTextureLayer(int target, int attachment, WebGLTexture? texture, int level, int layer);
 
   // String? getActiveUniformBlockName(Program program, int uniformBlockIndex);
 
@@ -1105,7 +1105,10 @@ class RenderingContext {
 
   // int? get drawingBufferWidth;
 
-  // void activeTexture(int texture);
+  void activeTexture(int texture) {
+    gl.glActiveTexture(texture);
+    checkError('activeTexture');
+  }
 
   void attachShader(Program program, Shader shader) {
     gl.glAttachShader(program.programID, shader.shaderId);
@@ -1123,7 +1126,10 @@ class RenderingContext {
 
   // void bindRenderbuffer(int target, Renderbuffer? renderbuffer);
 
-  // void bindTexture(int target, Texture? texture);
+  void bindTexture(int target, WebGLTexture? texture) {
+    gl.glBindTexture(target, texture?.textureId ?? 0);
+    checkError('bindTexture');
+  }
 
   // void blendColor(num red, num green, num blue, num alpha);
 
@@ -1135,29 +1141,23 @@ class RenderingContext {
 
   // void blendFuncSeparate(int srcRGB, int dstRGB, int srcAlpha, int dstAlpha);
 
-  void bufferData<T extends Object>(int target, List<T> data, int usage, [Type? nativeType]) {
+  /// Be careful which type of integer you really pass here. Unfortunately an UInt16List
+  /// is viewed by the Dart type system just as List<int>, so we jave to specify the native type
+  /// here in [nativeType]
+  void bufferData<T extends Object>(int target, T data, int usage) {
     late Pointer<Void> nativeData;
     late int size;
-    final type = nativeType != null ? nativeType : T;
-    switch (type) {
-      case double:
-        nativeData = floatListToArrayPointer(data as List<double>).cast();
-        size = data.length * sizeOf<Float>();
-        break;
-      case Float:
-        nativeData = floatListToArrayPointer(data as List<double>).cast();
-        size = data.length * sizeOf<Float>();
-        break;
-      case int:
-        nativeData = int32ListToArrayPointer(data as List<int>).cast();
-        size = data.length * sizeOf<Int32>();
-        break;
-      case Int32:
-        nativeData = int32ListToArrayPointer(data as List<int>).cast();
-        size = data.length * sizeOf<Int32>();
-        break;
-      default:
-        throw (OpenGLException('bufferData: unsupported native type $T', -1));
+    if (data is List<double> || data is Float32List) {
+      nativeData = floatListToArrayPointer(data as List<double>).cast();
+      size = data.length * sizeOf<Float>();
+    } else if (data is Int32List) {
+      nativeData = int32ListToArrayPointer(data).cast();
+      size = data.length * sizeOf<Int32>();
+    } else if (data is Uint16List) {
+      nativeData = uInt16ListToArrayPointer(data).cast();
+      size = data.length * sizeOf<Uint16>();
+    } else {
+      throw (OpenGLException('bufferData: unsupported native type $T', -1));
     }
     gl.glBufferData(target, size, nativeData, usage);
     free(nativeData);
@@ -1174,6 +1174,14 @@ class RenderingContext {
 
   Pointer<Int32> int32ListToArrayPointer(List<int> list) {
     final ptr = allocate<Int32>(count: list.length);
+    for (var i = 0; i < list.length; i++) {
+      ptr.elementAt(i).value = list[i];
+    }
+    return ptr;
+  }
+
+  Pointer<Uint16> uInt16ListToArrayPointer(List<int> list) {
+    final ptr = allocate<Uint16>(count: list.length);
     for (var i = 0; i < list.length; i++) {
       ptr.elementAt(i).value = list[i];
     }
@@ -1256,7 +1264,12 @@ class RenderingContext {
     return shader;
   }
 
-  // Texture createTexture();
+  WebGLTexture createTexture() {
+    Pointer<Uint32> textureId = tempUint32s[0];
+    gl.glGenTextures(1, textureId);
+    checkError('createBuffer');
+    return WebGLTexture._create(textureId.value);
+  }
 
   // void cullFace(int mode);
 
@@ -1270,7 +1283,7 @@ class RenderingContext {
 
   // void deleteShader(Shader? shader);
 
-  // void deleteTexture(Texture? texture);
+  // void deleteTexture(WebGLTexture? texture);
 
   // void depthFunc(int func);
 
@@ -1315,7 +1328,7 @@ class RenderingContext {
 
   // void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, Renderbuffer? renderbuffer);
 
-  // void framebufferTexture2D(int target, int attachment, int textarget, Texture? texture, int level);
+  // void framebufferTexture2D(int target, int attachment, int textarget, WebGLTexture? texture, int level);
 
   // void frontFace(int mode);
 
@@ -1404,7 +1417,7 @@ class RenderingContext {
 
   // bool isShader(Shader? shader);
 
-  // bool isTexture(Texture? texture);
+  // bool isTexture(WebGLTexture? texture);
 
   // void lineWidth(num width);
 
@@ -1431,7 +1444,11 @@ class RenderingContext {
       }
     }
   }
-  // void pixelStorei(int pname, int param);
+
+  void pixelStorei(int pname, int param) {
+    gl.glPixelStorei(pname, param);
+    checkError('pixelStorei');
+  }
 
   // void polygonOffset(num factor, num units);
 
@@ -1466,73 +1483,68 @@ class RenderingContext {
 
   // void stencilOpSeparate(int face, int fail, int zfail, int zpass);
 
-  // void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type,
-  //     bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video,
-  //     [int? format, int? type, TypedData? pixels]) {
-  //   if (type != null && format != null && (bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is int)) {
-  //     _texImage2D_1(target, level, internalformat, format_OR_width, height_OR_type,
-  //         bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video, format, type, pixels);
-  //     return;
-  //   }
-  //   if ((bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is ImageData) &&
-  //       format == null &&
-  //       type == null &&
-  //       pixels == null) {
-  //     var pixels_1 = convertDartToNative_ImageData(bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video);
-  //     _texImage2D_2(target, level, internalformat, format_OR_width, height_OR_type, pixels_1);
-  //     return;
-  //   }
-  //   if ((bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is ImageElement) &&
-  //       format == null &&
-  //       type == null &&
-  //       pixels == null) {
-  //     _texImage2D_3(target, level, internalformat, format_OR_width, height_OR_type,
-  //         bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video);
-  //     return;
-  //   }
-  //   if ((bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is CanvasElement) &&
-  //       format == null &&
-  //       type == null &&
-  //       pixels == null) {
-  //     _texImage2D_4(target, level, internalformat, format_OR_width, height_OR_type,
-  //         bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video);
-  //     return;
-  //   }
-  //   if ((bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is VideoElement) &&
-  //       format == null &&
-  //       type == null &&
-  //       pixels == null) {
-  //     _texImage2D_5(target, level, internalformat, format_OR_width, height_OR_type,
-  //         bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video);
-  //     return;
-  //   }
-  //   if ((bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video is ImageBitmap) &&
-  //       format == null &&
-  //       type == null &&
-  //       pixels == null) {
-  //     _texImage2D_6(target, level, internalformat, format_OR_width, height_OR_type,
-  //         bitmap_OR_border_OR_canvas_OR_image_OR_pixels_OR_video);
-  //     return;
-  //   }
-  //   throw new ArgumentError("Incorrect number or type of arguments");
-  // }
+  // //JS ('texImage2D')
+  /// passing null for pixels is perfectly fine, in that case an empty Texture is allocated
+  void texImage2D(target, level, internalformat, width, height, int border, format, type, TypedData? pixels) {
+    /// TODO this can probably optimized depending on if the length can be devided by 4 or 2
+    Pointer<Int8>? nativeBuffer;
+    if (pixels != null) {
+      nativeBuffer = allocate<Int8>(count: pixels.lengthInBytes);
+      final dartData = pixels.buffer.asUint8List();
+      for (int i = 0; i < dartData.lengthInBytes; i++) {
+        nativeBuffer.elementAt(i).value = dartData[i];
+      }
+    }
+    gl.glTexImage2D(target, level, internalformat, width, height, border, format, type,
+        nativeBuffer != null ? nativeBuffer.cast() : nullptr);
 
-  // //JS ('texImage2D')
-  // void _texImage2D_1(target, level, internalformat, width, height, int border, format, type, TypedData? pixels);
-  // //JS ('texImage2D')
-  // void _texImage2D_2(target, level, internalformat, format, type, pixels);
-  // //JS ('texImage2D')
-  // void _texImage2D_3(target, level, internalformat, format, type, ImageElement image);
-  // //JS ('texImage2D')
-  // void _texImage2D_4(target, level, internalformat, format, type, CanvasElement canvas);
-  // //JS ('texImage2D')
-  // void _texImage2D_5(target, level, internalformat, format, type, VideoElement video);
-  // //JS ('texImage2D')
-  // void _texImage2D_6(target, level, internalformat, format, type, ImageBitmap bitmap);
+    if (nativeBuffer != null) {
+      free(nativeBuffer);
+    }
+    checkError('texImage2D');
+  }
 
-  // void texParameterf(int target, int pname, num param);
+  Future<void> texImage2DfromImage(
+    target,
+    Image image, {
+    level = 0,
+    internalformat = WebGL.RGBA,
+    format = WebGL.RGBA,
+    type = WebGL.UNSIGNED_BYTE,
+  }) async {
+    texImage2D(target, level, internalformat, image.width, image.height, 0, format, type, (await image.toByteData())!);
+  }
 
-  // void texParameteri(int target, int pname, int param);
+  Future<void> texImage2DfromAsset(
+    target,
+    String assetPath, {
+    level = 0,
+    internalformat = WebGL.RGBA32UI,
+    format = WebGL.RGBA,
+    type = WebGL.UNSIGNED_INT,
+  }) async {
+    final image = await loadImageFromAsset(assetPath);
+    texImage2D(target, level, internalformat, image.width, image.height, 0, format, type, (await image.toByteData())!);
+  }
+
+  Future<Image> loadImageFromAsset(String assetPath) async {
+    final bytes = await rootBundle.load(assetPath);
+    final loadingCompleter = Completer<Image>();
+    decodeImageFromList(bytes.buffer.asUint8List(), (image) {
+      loadingCompleter.complete(image);
+    });
+    return loadingCompleter.future;
+  }
+
+  void texParameterf(int target, int pname, double param) {
+    gl.glTexParameterf(target, pname, param);
+    checkError('texParameterf');
+  }
+
+  void texParameteri(int target, int pname, int param) {
+    gl.glTexParameteri(target, pname, param);
+    checkError('texParameteri');
+  }
 
   // void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type,
   //     bitmap_OR_canvas_OR_format_OR_image_OR_pixels_OR_video,
@@ -1587,7 +1599,10 @@ class RenderingContext {
 
   // void uniform1fv(UniformLocation? location, v);
 
-  // void uniform1i(UniformLocation? location, int x);
+  void uniform1i(UniformLocation location, int x) {
+    gl.glUniform1i(location.locationId, x);
+    checkError('uniform1i');
+  }
 
   // void uniform1iv(UniformLocation? location, v);
 
@@ -1703,21 +1718,23 @@ class Shader {
 //   }
 // }
 
-// // JS "WebGLTexture")
-// class Texture extends Interceptor {
-//   // To suppress missing implicit constructor warnings.
-//   factory Texture._() {
-//     throw new UnsupportedError("Not supported");
-//   }
+/// JS "WebGLTexture") We have to stay with the Original Name to avoid name clashing
+/// with the Flutter WebGLTexture widget
+class WebGLTexture {
+  // To suppress missing implicit constructor warnings.
+  final int textureId;
+  WebGLTexture._create(this.textureId);
 
-//   bool? get lastUploadedVideoFrameWasSkipped;
+  /// These function were defined in the Dart version of the WebGL interface
+  /// What is strange is that they are not defined in the WebGL standard
+  // bool? get lastUploadedVideoFrameWasSkipped;
 
-//   int? get lastUploadedVideoHeight;
+  // int? get lastUploadedVideoHeight;
 
-//   num? get lastUploadedVideoTimestamp;
+  // num? get lastUploadedVideoTimestamp;
 
-//   int? get lastUploadedVideoWidth;
-// }
+  // int? get lastUploadedVideoWidth;
+}
 
 // // JS "WebGLTimerQueryEXT")
 // class TimerQueryExt extends Interceptor {

@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter_web_gl/flutter_web_gl.dart';
 
@@ -33,7 +35,7 @@ part 'lesson1.dart';
 part 'lesson2.dart';
 part 'lesson3.dart';
 part 'lesson4.dart';
-// part 'lesson5.dart';
+part 'lesson5.dart';
 // part 'lesson6.dart';
 // part 'lesson7.dart';
 // part 'lesson8.dart';
@@ -143,7 +145,7 @@ abstract class Lesson {
 
   /// Animate the scene any way you like. [now] is provided as a clock reference
   /// since the scene rendering started.
-  void animate(num now) {}
+  void animate(int now) {}
 
   /// Handle any keyboard events.
   void handleKeys() {}
@@ -152,23 +154,18 @@ abstract class Lesson {
   num lastTime = 0;
 }
 
-// /// Load the given image at [url] and call [handle] to execute some GL code.
-// /// Return a [Future] to asynchronously notify when the texture is complete.
-// Future<Texture> loadTexture(String url, handle(Texture tex, ImageElement ele)) {
-//   var completer = new Completer<Texture>();
-//   var texture = gl.createTexture();
-//   var element = new ImageElement();
-//   element.onLoad.listen((e) {
-//     handle(texture, element);
-//     completer.complete(texture);
-//   });
-//   element.src = url;
-//   return completer.future;
-// }
+/// Load the given image at [url] and call [handle] to execute some GL code.
+/// Return a [Future] to asynchronously notify when the texture is complete.
+Future<WebGLTexture> loadTexture(String url, handle(WebGLTexture tex, Image data)) async {
+  var texture = gl.createTexture();
+  final data = await gl.loadImageFromAsset('assets/$url');
+  handle(texture, data);
+  return texture;
+}
 
 // /// This is a common handler for [loadTexture]. It will be explained in future
 // /// lessons that require textures.
-// void handleMipMapTexture(Texture texture, ImageElement image) {
+// void handleMipMapTexture(WebGLTexture texture, ImageElement image) {
 //   gl.pixelStorei(WebGL.UNPACK_FLIP_Y_WEBGL, 1);
 //   gl.bindTexture(WebGL.TEXTURE_2D, texture);
 //   gl.texImage2D(

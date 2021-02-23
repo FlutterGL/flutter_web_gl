@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:dylib/dylib.dart';
 import 'package:ffi/ffi.dart';
