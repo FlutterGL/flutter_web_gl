@@ -7,7 +7,7 @@ class OpenGLException implements Exception {
   final int error;
 
   @override
-  String toString() => '$message EGL error $error ';
+  String toString() => '$message GLES error $error ';
 }
 // // The web wrapper uses this as base class everywhere
 
@@ -1332,7 +1332,10 @@ class RenderingContext {
 
   // void frontFace(int mode);
 
-  // void generateMipmap(int target);
+  void generateMipmap(int target) {
+    gl.glGenerateMipmap(target);
+    checkError('generateMipmap');
+  }
 
   // ActiveInfo getActiveAttrib(Program program, int index);
 
@@ -1614,9 +1617,17 @@ class RenderingContext {
 
   // void uniform2iv(UniformLocation? location, v);
 
-  // void uniform3f(UniformLocation? location, num x, num y, num z);
+  void uniform3f(UniformLocation location, double x, double y, double z) {
+    gl.glUniform3f(location.locationId, x, y, z);
+    checkError('uniform3f');
+  }
 
-  // void uniform3fv(UniformLocation? location, v);
+  void uniform3fv(UniformLocation location, List<double> vectors) {
+    var arrayPointer = floatListToArrayPointer(vectors);
+    gl.glUniform3fv(location.locationId, vectors.length ~/ 3, arrayPointer);
+    checkError('uniform3fv');
+    free(arrayPointer);
+  }
 
   // void uniform3i(UniformLocation? location, int x, int y, int z);
 
@@ -1632,7 +1643,12 @@ class RenderingContext {
 
   // void uniformMatrix2fv(UniformLocation? location, bool transpose, array);
 
-  // void uniformMatrix3fv(UniformLocation? location, bool transpose, array);
+  void uniformMatrix3fv(UniformLocation location, bool transpose, List<double> values) {
+    var arrayPointer = floatListToArrayPointer(values);
+    gl.glUniformMatrix3fv(location.locationId, values.length ~/ 9, transpose ? 1 : 0, arrayPointer);
+    checkError('uniformMatrix4fv');
+    free(arrayPointer);
+  }
 
   /// be careful, data always has a length that is a multiple of 16
   void uniformMatrix4fv(UniformLocation location, bool transpose, List<double> values) {

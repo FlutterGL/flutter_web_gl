@@ -25,8 +25,8 @@ class Lesson5 extends Lesson {
   Lesson5() {
     cube = new Cube();
     loadTexture("dash.png", (WebGLTexture texture, Image data) {
+      gl.pixelStorei(WebGL.UNPACK_ALIGNMENT, 1);
       gl.bindTexture(WebGL.TEXTURE_2D, texture);
-      // gl.pixelStorei(WebGL.UNPACK_FLIP_Y_WEBGL, 1);
       gl.texImage2DfromImage(
         WebGL.TEXTURE_2D,
         data,
@@ -51,24 +51,27 @@ class Lesson5 extends Lesson {
 
     program = new GlProgram(
       '''
+          #version 300 es
           precision mediump float;
+          out vec4 FragColor;
 
-          varying vec2 vTextureCoord;
+          in   vec2 vTextureCoord;
 
           uniform sampler2D uSampler;
 
           void main(void) {
-              gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+              FragColor = texture(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
           }
         ''',
       '''
-          attribute vec3 aVertexPosition;
-          attribute vec2 aTextureCoord;
+          #version 300 es
+          in vec3 aVertexPosition;
+          in vec2 aTextureCoord;
 
           uniform mat4 uMVMatrix;
           uniform mat4 uPMatrix;
 
-          varying vec2 vTextureCoord;
+          out vec2 vTextureCoord;
 
           void main(void) {
               gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
