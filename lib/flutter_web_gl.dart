@@ -74,7 +74,7 @@ class FlutterWebGL {
     return version;
   }
 
-  static Future<void> initOpenGL() async {
+  static Future<void> initOpenGL([bool debug = false]) async {
     /// make sure we don't call this twice
     if (_display != nullptr) {
       return;
@@ -119,14 +119,12 @@ class FlutterWebGL {
       eglDestroyContext(_display, _pluginContext);
     }
 
-    _baseAppContext = eglCreateContext(
-      _display,
-      _config,
+    _baseAppContext = eglCreateContext(_display, _config,
 
-      /// we link both contexts so that app and plugin can share OpenGL Objects
-      shareContext: returnedPluginContext,
-      contextClientVersion: 3,
-    );
+        /// we link both contexts so that app and plugin can share OpenGL Objects
+        shareContext: returnedPluginContext,
+        contextClientVersion: 3,
+        isDebugContext: debug);
 
     /// to make a context current you have to provide some texture even if you don't use it afterwards
     _dummySurface = eglCreatePbufferSurface(_display, _config, attributes: {
@@ -136,6 +134,89 @@ class FlutterWebGL {
 
     /// bind context to this thread. All following OpenGL calls from this thread will use this context
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
+
+    if (debug) {
+      rawOpenGl.glEnable(GL_DEBUG_OUTPUT);
+      rawOpenGl.glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+      rawOpenGl.glDebugMessageCallback(Pointer.fromFunction<GLDEBUGPROC>(glDebugOutput), nullptr);
+      rawOpenGl.glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    }
+  }
+
+  static void glDebugOutput(
+      int source, int type, int id, int severity, int length, Pointer<Int8> pMessage, Pointer<Void> pUserParam) {
+    final message = Utf8.fromUtf8(pMessage.cast());
+    // ignore non-significant error/warning codes
+    // if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+
+    print("---------------");
+    print("Debug message $id  $message");
+
+    switch (source) {
+      case GL_DEBUG_SOURCE_API:
+        print("Source: API");
+        break;
+      case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        print("Source: Window System");
+        break;
+      case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        print("Source: Shader Compiler");
+        break;
+      case GL_DEBUG_SOURCE_THIRD_PARTY:
+        print("Source: Third Party");
+        break;
+      case GL_DEBUG_SOURCE_APPLICATION:
+        print("Source: Application");
+        break;
+      case GL_DEBUG_SOURCE_OTHER:
+        print("Source: Other");
+        break;
+    }
+    switch (type) {
+      case GL_DEBUG_TYPE_ERROR:
+        print("Type: Error");
+        break;
+      case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        print("Type: Deprecated Behaviour");
+        break;
+      case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        print("Type: Undefined Behaviour");
+        break;
+      case GL_DEBUG_TYPE_PORTABILITY:
+        print("Type: Portability");
+        break;
+      case GL_DEBUG_TYPE_PERFORMANCE:
+        print("Type: Performance");
+        break;
+      case GL_DEBUG_TYPE_MARKER:
+        print("Type: Marker");
+        break;
+      case GL_DEBUG_TYPE_PUSH_GROUP:
+        print("Type: Push Group");
+        break;
+      case GL_DEBUG_TYPE_POP_GROUP:
+        print("Type: Pop Group");
+        break;
+      case GL_DEBUG_TYPE_OTHER:
+        print("Type: Other");
+        break;
+    }
+
+    switch (severity) {
+      case GL_DEBUG_SEVERITY_HIGH:
+        print("Severity: high");
+        break;
+      case GL_DEBUG_SEVERITY_MEDIUM:
+        print("Severity: medium");
+        break;
+      case GL_DEBUG_SEVERITY_LOW:
+        print("Severity: low");
+        break;
+      case GL_DEBUG_SEVERITY_NOTIFICATION:
+        print("Severity: notification");
+        break;
+    }
+    print('\n');
   }
 
   static Future<FlutterGLTexture> createTexture(int width, int height) async {
