@@ -24,8 +24,8 @@ class Lesson7 extends Lesson {
 
   Lesson7() {
     cube = new Cube();
-    // loadMipMapTexture(gl.createTexture()).then((t) => texture = t);
-    loadTexture('crate.png', handleMipMapTexture).then((t) => texture = t);
+    // loadMipMapTexture(gl.createTexture()).then((t) => texture = t); // works
+    loadTexture('crate.png', handleMipMapTexture).then((t) => texture = t); // fails
 
     var attributes = ['aVertexPosition', 'aVertexNormal', 'aTextureCoord'];
     var uniforms = [
