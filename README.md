@@ -68,4 +68,4 @@ https://www.khronos.org/registry/EGL/specs/eglspec.1.5.pdf
 
 https://learnopengl.com/Getting-started/Hello-Triangle
 
-[Pub]: pub.dev/packages/flutter_web_gl
+[Pub]: https://pub.dev/packages/flutter_web_gl
