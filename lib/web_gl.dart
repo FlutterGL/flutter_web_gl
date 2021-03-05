@@ -566,18 +566,18 @@ class RenderingContext {
   /// As allocating and freeing native memory is expensive and we need regularly
   /// buffers to receive values from FFI function we create a small set here that will
   /// be reused constantly
-  final tempInt32s = [allocate<Int32>(), allocate<Int32>(), allocate<Int32>()];
-  final tempUint32s = [allocate<Uint32>(), allocate<Uint32>(), allocate<Uint32>()];
-  final tempInt8 = allocate<Int8>();
+  final tempInt32s = [calloc<Int32>(), calloc<Int32>(), calloc<Int32>()];
+  final tempUint32s = [calloc<Uint32>(), calloc<Uint32>(), calloc<Uint32>()];
+  final tempInt8 = calloc<Int8>();
 
   void dispose() {
     for (final p in tempInt32s) {
-      free(p);
+      calloc.free(p);
     }
     for (final p in tempUint32s) {
-      free(p);
+      calloc.free(p);
     }
-    free(tempInt8);
+    calloc.free(tempInt8);
   }
 
   void checkError([String message = '']) {
@@ -1160,12 +1160,12 @@ class RenderingContext {
       throw (OpenGLException('bufferData: unsupported native type $T', -1));
     }
     gl.glBufferData(target, size, nativeData, usage);
-    free(nativeData);
+    calloc.free(nativeData);
     checkError('bufferData');
   }
 
   Pointer<Float> floatListToArrayPointer(List<double> list) {
-    final ptr = allocate<Float>(count: list.length);
+    final ptr = calloc<Float>(list.length);
     for (var i = 0; i < list.length; i++) {
       ptr.elementAt(i).value = list[i];
     }
@@ -1173,7 +1173,7 @@ class RenderingContext {
   }
 
   Pointer<Int32> int32ListToArrayPointer(List<int> list) {
-    final ptr = allocate<Int32>(count: list.length);
+    final ptr = calloc<Int32>(list.length);
     for (var i = 0; i < list.length; i++) {
       ptr.elementAt(i).value = list[i];
     }
@@ -1181,7 +1181,7 @@ class RenderingContext {
   }
 
   Pointer<Uint16> uInt16ListToArrayPointer(List<int> list) {
-    final ptr = allocate<Uint16>(count: list.length);
+    final ptr = calloc<Uint16>(list.length);
     for (var i = 0; i < list.length; i++) {
       ptr.elementAt(i).value = list[i];
     }
@@ -1219,12 +1219,12 @@ class RenderingContext {
 
         String message = '';
         if (infoLen.value > 1) {
-          final infoLog = allocate<Int8>(count: infoLen.value);
+          final infoLog = calloc<Int8>(infoLen.value);
 
           gl.glGetShaderInfoLog(shader.shaderId, infoLen.value, nullptr, infoLog);
-          message = "\nError compiling shader:\n${Utf8.fromUtf8(infoLog.cast())}";
+          message = "\nError compiling shader:\n${infoLog.cast<Utf8>().toDartString()}";
 
-          free(infoLog);
+          calloc.free(infoLog);
         }
         throw OpenGLException(message, 0);
       }
@@ -1309,7 +1309,7 @@ class RenderingContext {
     var offSetPointer = Pointer<Void>.fromAddress(offset);
     gl.glDrawElements(mode, count, type, offSetPointer.cast());
     checkError('drawElements');
-    free(offSetPointer);
+    calloc.free(offSetPointer);
   }
 
   void enable(int cap) {
@@ -1344,10 +1344,10 @@ class RenderingContext {
   // List<Shader>? getAttachedShaders(Program program);
 
   int getAttribLocation(Program program, String name) {
-    final locationName = Utf8.toUtf8(name);
+    final locationName = name.toNativeUtf8();
     final location = gl.glGetAttribLocation(program.programID, locationName.cast());
     checkError('getAttribLocation');
-    free(locationName);
+    calloc.free(locationName);
     return location;
   }
   // Object? getBufferParameter(int target, int pname);
@@ -1393,10 +1393,10 @@ class RenderingContext {
   // Object? getUniform(Program program, UniformLocation location);
 
   UniformLocation getUniformLocation(Program program, String name) {
-    final locationName = Utf8.toUtf8(name);
+    final locationName = name.toNativeUtf8();
     final location = gl.glGetUniformLocation(program.programID, locationName.cast());
     checkError('getProgramParameter');
-    free(locationName);
+    calloc.free(locationName);
     return UniformLocation._create(location);
   }
 
@@ -1436,12 +1436,12 @@ class RenderingContext {
 
         String message = '';
         if (infoLen.value > 1) {
-          final infoLog = allocate<Int8>(count: infoLen.value);
+          final infoLog = calloc<Int8>(infoLen.value);
 
           gl.glGetProgramInfoLog(program.programID, infoLen.value, nullptr, infoLog);
-          message = "\nError linking program:\n${Utf8.fromUtf8(infoLog.cast())}";
+          message = "\nError linking program:\n${infoLog.cast<Utf8>().toDartString()}";
 
-          free(infoLog);
+          calloc.free(infoLog);
         }
         throw OpenGLException(message, 0);
       }
@@ -1465,12 +1465,12 @@ class RenderingContext {
   // void scissor(int x, int y, int width, int height);
 
   void shaderSource(Shader shader, String shaderSource) {
-    var sourceString = Utf8.toUtf8(shaderSource);
-    var arrayPointer = allocate<Pointer<Int8>>();
+    var sourceString = shaderSource.toNativeUtf8();
+    var arrayPointer = calloc<Pointer<Int8>>();
     arrayPointer.value = Pointer.fromAddress(sourceString.address);
     gl.glShaderSource(shader.shaderId, 1, arrayPointer, nullptr);
-    free(arrayPointer);
-    free(sourceString);
+    calloc.free(arrayPointer);
+    calloc.free(sourceString);
     checkError('shaderSource');
   }
 
@@ -1492,7 +1492,7 @@ class RenderingContext {
     /// TODO this can probably optimized depending on if the length can be devided by 4 or 2
     Pointer<Int8>? nativeBuffer;
     if (pixels != null) {
-      nativeBuffer = allocate<Int8>(count: pixels.lengthInBytes);
+      nativeBuffer = calloc<Int8>(pixels.lengthInBytes);
       final dartData = pixels.buffer.asUint8List();
       for (int i = 0; i < dartData.lengthInBytes; i++) {
         nativeBuffer.elementAt(i).value = dartData[i];
@@ -1502,7 +1502,7 @@ class RenderingContext {
         nativeBuffer != null ? nativeBuffer.cast() : nullptr);
 
     if (nativeBuffer != null) {
-      free(nativeBuffer);
+      calloc.free(nativeBuffer);
     }
     checkError('texImage2D');
   }
@@ -1626,7 +1626,7 @@ class RenderingContext {
     var arrayPointer = floatListToArrayPointer(vectors);
     gl.glUniform3fv(location.locationId, vectors.length ~/ 3, arrayPointer);
     checkError('uniform3fv');
-    free(arrayPointer);
+    calloc.free(arrayPointer);
   }
 
   // void uniform3i(UniformLocation? location, int x, int y, int z);
@@ -1647,7 +1647,7 @@ class RenderingContext {
     var arrayPointer = floatListToArrayPointer(values);
     gl.glUniformMatrix3fv(location.locationId, values.length ~/ 9, transpose ? 1 : 0, arrayPointer);
     checkError('uniformMatrix4fv');
-    free(arrayPointer);
+    calloc.free(arrayPointer);
   }
 
   /// be careful, data always has a length that is a multiple of 16
@@ -1655,7 +1655,7 @@ class RenderingContext {
     var arrayPointer = floatListToArrayPointer(values);
     gl.glUniformMatrix4fv(location.locationId, values.length ~/ 16, transpose ? 1 : 0, arrayPointer);
     checkError('uniformMatrix4fv');
-    free(arrayPointer);
+    calloc.free(arrayPointer);
   }
 
   void useProgram(Program program) {
@@ -1685,7 +1685,7 @@ class RenderingContext {
     var offsetPointer = Pointer<Void>.fromAddress(offset);
     gl.glVertexAttribPointer(index, size, type, normalized ? 1 : 0, stride, offsetPointer.cast());
     checkError('vertexAttribPointer');
-    free(offsetPointer);
+    calloc.free(offsetPointer);
   }
 
   void viewport(int x, int y, int width, int height) {

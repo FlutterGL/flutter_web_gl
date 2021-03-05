@@ -145,7 +145,7 @@ class FlutterWebGL {
 
   static void glDebugOutput(
       int source, int type, int id, int severity, int length, Pointer<Int8> pMessage, Pointer<Void> pUserParam) {
-    final message = Utf8.fromUtf8(pMessage.cast());
+    final message = pMessage.cast<Utf8>().toDartString();
     // ignore non-significant error/warning codes
     // if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
@@ -222,7 +222,7 @@ class FlutterWebGL {
   static Future<FlutterGLTexture> createTexture(int width, int height) async {
     final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height});
 
-    Pointer<Uint32> fbo = allocate();
+    Pointer<Uint32> fbo = calloc();
     rawOpenGl.glGenFramebuffers(1, fbo);
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, fbo.value);
 
@@ -237,7 +237,7 @@ class FlutterWebGL {
       print("Framebuffer (color) check failed: $frameBufferCheck");
     }
 
-    Pointer<Int32> depthBuffer = allocate();
+    Pointer<Int32> depthBuffer = calloc();
     rawOpenGl.glGenRenderbuffers(1, depthBuffer.cast());
     rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.value);
     rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
@@ -250,7 +250,7 @@ class FlutterWebGL {
     rawOpenGl.glViewport(0, 0, width, height);
     _activeFramebuffer = fbo.value;
 
-    free(fbo);
+    calloc.free(fbo);
     return newTexture;
   }
 
@@ -264,10 +264,10 @@ class FlutterWebGL {
     if (_activeFramebuffer == texture.fboId) {
       rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, 0);
 
-      Pointer<Uint32> fbo = allocate();
+      Pointer<Uint32> fbo = calloc();
       fbo.value = texture.fboId;
       rawOpenGl.glDeleteBuffers(1, fbo);
-      free(fbo);
+      calloc.free(fbo);
     }
     await _channel.invokeMethod('deleteTexture', {"textureId": texture.textureId});
   }

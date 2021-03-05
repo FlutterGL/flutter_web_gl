@@ -106,41 +106,41 @@ class _MyAppState extends State<MyApp> {
     final gl = FlutterWebGL.rawOpenGl;
 
     int vertexShader = gl.glCreateShader(GL_VERTEX_SHADER);
-    var sourceString = Utf8.toUtf8(vertexShaderSource);
-    var arrayPointer = allocate<Pointer<Int8>>();
+    var sourceString = vertexShaderSource.toNativeUtf8();
+    var arrayPointer = calloc<Pointer<Int8>>();
     arrayPointer.value = Pointer.fromAddress(sourceString.address);
     gl.glShaderSource(vertexShader, 1, arrayPointer, nullptr);
     gl.glCompileShader(vertexShader);
-    free(arrayPointer);
-    free(sourceString);
+    calloc.free(arrayPointer);
+    calloc.free(sourceString);
 
     int fragmentShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
-    sourceString = Utf8.toUtf8(fragmentShaderSource);
-    arrayPointer = allocate<Pointer<Int8>>();
+    sourceString = fragmentShaderSource.toNativeUtf8();
+    arrayPointer = calloc<Pointer<Int8>>();
     arrayPointer.value = Pointer.fromAddress(sourceString.address);
     gl.glShaderSource(fragmentShader, 1, arrayPointer, nullptr);
     gl.glCompileShader(fragmentShader);
-    final compiled = allocate<Int32>();
+    final compiled = calloc<Int32>();
     gl.glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, compiled);
     if (compiled.value == 0) {
-      final infoLen = allocate<Int32>();
+      final infoLen = calloc<Int32>();
 
       gl.glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, infoLen);
 
       if (infoLen.value > 1) {
-        final infoLog = allocate<Int8>(count: infoLen.value);
+        final infoLog = calloc<Int8>(infoLen.value);
 
         gl.glGetShaderInfoLog(fragmentShader, infoLen.value, nullptr, infoLog);
-        print("Error compiling shader:\n${Utf8.fromUtf8(infoLog.cast())}");
+        print("Error compiling shader:\n${infoLog.cast<Utf8>().toDartString()}");
 
-        free(infoLog);
+        calloc.free(infoLog);
       }
 
       gl.glDeleteShader(fragmentShader);
       return;
     }
-    free(arrayPointer);
-    free(sourceString);
+    calloc.free(arrayPointer);
+    calloc.free(sourceString);
 
     shaderProgram = gl.glCreateProgram();
     gl.glAttachShader(shaderProgram, vertexShader);
@@ -155,7 +155,7 @@ class _MyAppState extends State<MyApp> {
   void draw() async {
     final gl = FlutterWebGL.rawOpenGl;
 
-    int colorLocation = gl.glGetUniformLocation(shaderProgram, Utf8.toUtf8('color').cast());
+    int colorLocation = gl.glGetUniformLocation(shaderProgram, 'color'.toNativeUtf8().cast());
     final randomColor = RandomColor();
 
     final bgColor = randomColor.randomColor(colorBrightness: ColorBrightness.dark);
@@ -168,7 +168,7 @@ class _MyAppState extends State<MyApp> {
         color.blue.toDouble() / 255, color.alpha.toDouble() / 255);
 
     final points = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
-    Pointer<Uint32> vbo = allocate();
+    Pointer<Uint32> vbo = calloc();
     gl.glGenBuffers(1, vbo);
     gl.glBindBuffer(GL_ARRAY_BUFFER, vbo.value);
     gl.glBufferData(GL_ARRAY_BUFFER, 36, floatListToArrayPointer(points).cast(), GL_STATIC_DRAW);
@@ -200,7 +200,7 @@ const fragmentShaderSource = //
     '} \n'; //
 
 Pointer<Float> floatListToArrayPointer(List<double> list) {
-  final ptr = allocate<Float>(count: list.length);
+  final ptr = calloc<Float>(list.length);
   for (var i = 0; i < list.length; i++) {
     ptr.elementAt(i).value = list[i];
   }
@@ -208,8 +208,8 @@ Pointer<Float> floatListToArrayPointer(List<double> list) {
 }
 
     // if (success.value == 0) {
-    //   Pointer<Int8> infoLog = allocate(count: 512);
+    //   Pointer<Int8> infoLog = calloc( 512);
     //   gl.glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
     //   print('ERROR::SHADER::FRAGMENT:LINKER_FAILED\n' + Utf8.fromUtf8(infoLog.cast()));
-    //   free(infoLog);
+    //   calloc.free(infoLog);
     // }

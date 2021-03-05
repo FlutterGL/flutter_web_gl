@@ -46,8 +46,8 @@ class Lesson1 extends Lesson {
     );
     gl.useProgram(program.program);
 
-    // Allocate and build the two buffers we need to draw a triangle and box.
-    // createBuffer() asks the WebGL system to allocate some data for us
+    // calloc and build the two buffers we need to draw a triangle and box.
+    // createBuffer() asks the WebGL system to calloc some data for us
     triangleVertexPositionBuffer = gl.createBuffer();
 
     // bindBuffer() tells the WebGL system the target of future calls

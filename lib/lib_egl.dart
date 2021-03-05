@@ -24,8 +24,8 @@ Pointer<Void> eglGetDisplay([Pointer<Void>? displayId]) {
 }
 
 EglInitializeResult eglInitialize(Pointer<Void> display) {
-  final major = allocate<Int32>();
-  final minor = allocate<Int32>();
+  final major = calloc<Int32>();
+  final minor = calloc<Int32>();
   final nativeCallSucceeded = _libEGL.eglInitialize(display, major, minor) == 1;
   EglInitializeResult result;
 
@@ -38,8 +38,8 @@ EglInitializeResult eglInitialize(Pointer<Void> display) {
     throw EglException('Failed to initialize with display [$display]');
   }
 
-  free(major);
-  free(minor);
+  calloc.free(major);
+  calloc.free(minor);
 
   return result;
 }
@@ -51,7 +51,7 @@ List<Pointer<Void>> eglChooseConfig(
   int maxConfigs = 1,
 }) {
   final attributeCount = attributes == null ? 1 : attributes.length * 2 + 1;
-  final attributeList = allocate<Int32>(count: attributeCount);
+  final attributeList = calloc<Int32>(attributeCount);
 
   if (attributes != null) {
     final attributeEntries = attributes.entries.toList(growable: false);
@@ -65,8 +65,8 @@ List<Pointer<Void>> eglChooseConfig(
   // The list must be terminated with EGL_NONE.
   attributeList[attributeCount - 1] = EglValue.none.toIntValue();
 
-  final configs = allocate<IntPtr>(count: maxConfigs);
-  final numConfigs = allocate<Int32>();
+  final configs = calloc<IntPtr>(maxConfigs);
+  final numConfigs = calloc<Int32>();
   final nativeCallSucceeded = _libEGL.eglChooseConfig(
         display,
         attributeList,
@@ -83,9 +83,9 @@ List<Pointer<Void>> eglChooseConfig(
     }
   }
 
-  free(attributeList);
-  free(configs);
-  free(numConfigs);
+  calloc.free(attributeList);
+  calloc.free(configs);
+  calloc.free(numConfigs);
 
   if (!nativeCallSucceeded) {
     throw EglException(
@@ -102,7 +102,7 @@ Pointer<Void> eglCreateContext(
   Pointer<Void>? shareContext,
   bool isDebugContext = false,
 }) {
-  final attributeList = allocate<Int32>(count: 5);
+  final attributeList = calloc<Int32>(5);
   attributeList[0] = EGL_CONTEXT_CLIENT_VERSION;
   attributeList[1] = contextClientVersion;
   if (isDebugContext) {
@@ -120,7 +120,7 @@ Pointer<Void> eglCreateContext(
     result = nativeCallResult;
   }
 
-  free(attributeList);
+  calloc.free(attributeList);
 
   if (nativeCallResult == nullptr) {
     throw EglException(
@@ -151,7 +151,7 @@ Pointer<Void> eglCreatePbufferSurface(
   Map<EglSurfaceAttributes, int>? attributes,
 }) {
   final attributeCount = attributes == null ? 1 : attributes.length * 2 + 1;
-  final attributeList = allocate<Int32>(count: attributeCount);
+  final attributeList = calloc<Int32>(attributeCount);
 
   if (attributes != null) {
     final attributeEntries = attributes.entries.toList(growable: false);
@@ -167,7 +167,7 @@ Pointer<Void> eglCreatePbufferSurface(
 
   final nativeCallResult = _libEGL.eglCreatePbufferSurface(display, config, attributeList);
 
-  free(attributeList);
+  calloc.free(attributeList);
   if (nativeCallResult == nullptr) {
     throw EglException(
         'Failed to create Pbuffer surface for display [$display], config [$config], attributes [$attributeList].');

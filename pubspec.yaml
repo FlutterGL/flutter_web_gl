@@ -9,8 +9,8 @@ environment:
 
 dependencies:
   dylib: 0.2.1-nullsafety.0
-  ffi: 0.2.0-nullsafety.1
-  opengl_es_bindings: ^1.0.0-pre 
+  ffi: ^1.0.0
+  opengl_es_bindings: ^1.0.0-pre.1
     # git: https://github.com/FlutterGL/opengl_es_bindings
   flutter:
     sdk: flutter
@@ -37,6 +37,9 @@ flutter:
         pluginClass: FlutterWebGlPlugin
       windows:
         pluginClass: FlutterWebGlPlugin
+      macos:
+        pluginClass: FlutterWebGlPlugin
+      
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
