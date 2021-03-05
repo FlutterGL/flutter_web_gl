@@ -1,5 +1,8 @@
 PODS:
   - flutter_web_gl (0.0.1):
+    - flutter_web_gl/MetalANGLE (= 0.0.1)
+    - FlutterMacOS
+  - flutter_web_gl/MetalANGLE (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - shared_preferences_macos (0.0.1):
@@ -19,7 +22,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_macos/macos
 
 SPEC CHECKSUMS:
-  flutter_web_gl: 285261b239a6953abf35cb140fa813a37d636b2f
+  flutter_web_gl: e6bcb90cc31ca7f116241943461c5918bb8ea9da
   FlutterMacOS: 57701585bf7de1b3fc2bb61f6378d73bbdea8424
   shared_preferences_macos: 480ce071d0666e37cef23fe6c702293a3d21799e
 

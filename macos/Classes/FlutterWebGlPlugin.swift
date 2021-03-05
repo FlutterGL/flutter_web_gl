@@ -1,6 +1,7 @@
 import Cocoa
 import FlutterMacOS
 
+
 public class FlutterWebGlPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "flutter_web_gl", binaryMessenger: registrar.messenger)
