@@ -1,0 +1,22 @@
+PODS:
+  - flutter_web_gl (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - flutter_web_gl (from `Flutter/ephemeral/.symlinks/plugins/flutter_web_gl/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+EXTERNAL SOURCES:
+  flutter_web_gl:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_web_gl/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  flutter_web_gl: be558ba995053b580a8caa47a8bd88304f2f6c96
+  FlutterMacOS: 57701585bf7de1b3fc2bb61f6378d73bbdea8424
+
+PODFILE CHECKSUM: a884f6dd3f7494f3892ee6c81feea3a3abbf9153
+
+COCOAPODS: 1.10.0
