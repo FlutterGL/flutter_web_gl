@@ -10,7 +10,6 @@ environment:
 
 dependencies:
   ffi: ^1.0.0
-  shared_preferences:
   random_color: 
     git: https://github.com/knezzz/RandomColor
   flutter:

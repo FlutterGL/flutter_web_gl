@@ -13,15 +13,15 @@ A new flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
-  s.source_files     = 'Classes/**/*'
-  s.dependency 'FlutterMacOS'
-  s.dependency 'MetalANGLE'
+  s.source_files = 'Classes/**/*.{h,m,swift,inc}'
+  s.public_header_files = 'Classes/**/*.{h,inc}'
+  s.vendored_libraries = 'Classes/*.a'
 
-  s.platform = :osx, '10.11'
+  s.dependency 'FlutterMacOS'
+
+  s.platform = :osx, '10.13'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
   s.swift_version = '5.0'
-  
-  s.framework = 'MetalANGLE'
-  s.vendored_frameworks = 'MetalANGLE.framework'
+
 
 end
