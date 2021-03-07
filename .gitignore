@@ -9,3 +9,11 @@ build/
 flutter_webgl.code-workspace
 .idea/workspace.xml
 .idea
+macos/Classes/libangle_base_mac.a
+macos/Classes/libangle_common_mac.a
+macos/Classes/libangle_gl_backend_mac.a
+macos/Classes/libangle_image_util_mac.a
+macos/Classes/libangle_metal_backend_mac.a
+macos/Classes/libangle_util_mac.a
+macos/Classes/libglslang_mac.a
+macos/Classes/libspirv-cross_mac.a
