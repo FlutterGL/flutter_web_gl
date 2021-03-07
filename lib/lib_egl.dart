@@ -1,20 +1,21 @@
 import 'dart:ffi';
+import 'dart:io';
 
 import 'package:dylib/dylib.dart';
 import 'package:ffi/ffi.dart';
 import 'package:opengl_es_bindings/opengl_es_bindings.dart';
 
-final LibEGL _libEGL = LibEGL(DynamicLibrary.open(resolveDylibPath('libEGL')));
+LibEGL? _libEGL;
 //
 // Public APIs
 //
 
-EglError eglGetError() => _libEGL.eglGetError().toEglError();
+EglError eglGetError() => _libEGL!.eglGetError().toEglError();
 
-Pointer<Void> eglGetCurrentContext() => _libEGL.eglGetCurrentContext();
+Pointer<Void> eglGetCurrentContext() => _libEGL!.eglGetCurrentContext();
 
 Pointer<Void> eglGetDisplay([Pointer<Void>? displayId]) {
-  final nativeCallResult = _libEGL.eglGetDisplay(displayId ?? nullptr);
+  final nativeCallResult = _libEGL!.eglGetDisplay(displayId ?? nullptr);
 
   if (nativeCallResult == nullptr) {
     throw EglException('No display matching display ID [$displayId] was found.');
@@ -23,10 +24,20 @@ Pointer<Void> eglGetDisplay([Pointer<Void>? displayId]) {
   return nativeCallResult;
 }
 
+void loadEGL() {
+  if (_libEGL == null) {
+    if (Platform.isMacOS || Platform.isIOS) {
+      _libEGL = LibEGL(DynamicLibrary.process());
+    } else {
+      _libEGL = LibEGL(DynamicLibrary.open(resolveDylibPath('libEGL')));
+    }
+  }
+}
+
 EglInitializeResult eglInitialize(Pointer<Void> display) {
   final major = calloc<Int32>();
   final minor = calloc<Int32>();
-  final nativeCallSucceeded = _libEGL.eglInitialize(display, major, minor) == 1;
+  final nativeCallSucceeded = _libEGL!.eglInitialize(display, major, minor) == 1;
   EglInitializeResult result;
 
   if (nativeCallSucceeded) {
@@ -67,7 +78,7 @@ List<Pointer<Void>> eglChooseConfig(
 
   final configs = calloc<IntPtr>(maxConfigs);
   final numConfigs = calloc<Int32>();
-  final nativeCallSucceeded = _libEGL.eglChooseConfig(
+  final nativeCallSucceeded = _libEGL!.eglChooseConfig(
         display,
         attributeList,
         configs.cast<Pointer<Void>>(),
@@ -113,7 +124,7 @@ Pointer<Void> eglCreateContext(
     attributeList[4] = EglValue.none.toIntValue();
   }
 
-  final nativeCallResult = _libEGL.eglCreateContext(display, config, shareContext ?? nullptr, attributeList);
+  final nativeCallResult = _libEGL!.eglCreateContext(display, config, shareContext ?? nullptr, attributeList);
   late Pointer<Void> result;
 
   if (nativeCallResult != nullptr) {
@@ -135,7 +146,7 @@ Pointer<Void> eglCreateWindowSurface(
   Pointer<Void> config,
   Pointer<Void> nativeWindow,
 ) {
-  final nativeCallResult = _libEGL.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
+  final nativeCallResult = _libEGL!.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
 
   if (nativeCallResult == nullptr) {
     throw EglException(
@@ -165,7 +176,7 @@ Pointer<Void> eglCreatePbufferSurface(
   // The list must be terminated with EGL_NONE.
   attributeList[attributeCount - 1] = EglValue.none.toIntValue();
 
-  final nativeCallResult = _libEGL.eglCreatePbufferSurface(display, config, attributeList);
+  final nativeCallResult = _libEGL!.eglCreatePbufferSurface(display, config, attributeList);
 
   calloc.free(attributeList);
   if (nativeCallResult == nullptr) {
@@ -182,7 +193,7 @@ void eglMakeCurrent(
   Pointer<Void> read,
   Pointer<Void> context,
 ) {
-  final nativeCallResult = _libEGL.eglMakeCurrent(display, draw, read, context) == 1;
+  final nativeCallResult = _libEGL!.eglMakeCurrent(display, draw, read, context) == 1;
 
   if (nativeCallResult) {
     return;
@@ -196,7 +207,7 @@ void eglSwapBuffers(
   Pointer<Void> display,
   Pointer<Void> surface,
 ) {
-  final nativeCallResult = _libEGL.eglSwapBuffers(display, surface) == 1;
+  final nativeCallResult = _libEGL!.eglSwapBuffers(display, surface) == 1;
 
   if (nativeCallResult) {
     return;
@@ -209,7 +220,7 @@ void eglDestroyContext(
   Pointer<Void> display,
   Pointer<Void> context,
 ) {
-  final nativeCallResult = _libEGL.eglDestroyContext(display, context) == 1;
+  final nativeCallResult = _libEGL!.eglDestroyContext(display, context) == 1;
 
   if (nativeCallResult) {
     return;

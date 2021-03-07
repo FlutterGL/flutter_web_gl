@@ -13,15 +13,19 @@ A new flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*.{h,m,swift,inc}'
+  s.source_files = 'Classes/**/*.{h,m,swift,inc,plist}'
   s.public_header_files = 'Classes/**/*.{h,inc}'
-  s.vendored_libraries = 'Classes/*.a'
 
   s.dependency 'FlutterMacOS'
 
   s.platform = :osx, '10.13'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
   s.swift_version = '5.0'
+  
+  s.preserve_paths = 'MetalANGLE.framework'
+  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework MetalANGLE' }
+  s.vendored_frameworks = 'MetalANGLE.framework'
+  s.library = 'c++'
 
 
 end

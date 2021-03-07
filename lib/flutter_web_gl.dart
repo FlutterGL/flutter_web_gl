@@ -79,6 +79,7 @@ class FlutterWebGL {
     if (_display != nullptr) {
       return;
     }
+    loadEGL();
     _display = eglGetDisplay();
     final initializeResult = eglInitialize(_display);
 

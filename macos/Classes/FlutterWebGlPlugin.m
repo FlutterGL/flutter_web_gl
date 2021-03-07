@@ -1,5 +1,5 @@
 #import "FlutterWebGlPlugin.h"
-#import "egl.h"
+// #import "MetalANGLE/EGL/egl.h"
 
 
 @implementation FlutterWebGlPlugin
@@ -10,15 +10,15 @@
     FlutterWebGlPlugin* instance = [[FlutterWebGlPlugin alloc] init];
     [registrar addMethodCallDelegate:instance channel:channel];
     
-    EGLAttrib displayAttribs[] = {EGL_NONE};
-    void* _eglDisplay = eglGetPlatformDisplay(0x3202, NULL, displayAttribs);
+    //EGLAttrib displayAttribs[] = {EGL_NONE};
+    // void* _eglDisplay = eglGetPlatformDisplay(0x3202, NULL, displayAttribs);
 
     
-    int result = eglGetError();
-    void* display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    EGLint major;
-    EGLint minor;
-   // eglInitialize(display,&major,&minor);
+    // int result = eglGetError();
+    // void* display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    // EGLint major;
+    // EGLint minor;
+    // eglInitialize(display,&major,&minor);
     
 }
 
