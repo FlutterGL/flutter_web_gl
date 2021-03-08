@@ -1,5 +1,5 @@
 #import "FlutterWebGlPlugin.h"
-// #import "MetalANGLE/EGL/egl.h"
+#import "MetalANGLE/EGL/egl.h"
 
 
 @implementation FlutterWebGlPlugin

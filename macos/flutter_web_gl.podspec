@@ -23,7 +23,7 @@ A new flutter plugin project.
   s.swift_version = '5.0'
   
   s.preserve_paths = 'MetalANGLE.framework'
-  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework MetalANGLE' }
+  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework MetalANGLE', 'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/MetalANGLE.framework/Headers"'}
   s.vendored_frameworks = 'MetalANGLE.framework'
   s.library = 'c++'
 
