@@ -100,6 +100,13 @@ class FlutterWebGL {
 
     _config = chooseConfigResult[0];
 
+    final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
+    print('Number of configs ${existingConfigs.length}');
+    for (int i = 0; i < existingConfigs.length; i++) {
+      print('\nConfig No: $i');
+      printConfigAttributes(_display, existingConfigs[i]);
+    }
+
     _pluginContext = eglCreateContext(
       _display,
       _config,

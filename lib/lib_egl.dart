@@ -106,6 +106,122 @@ List<Pointer<Void>> eglChooseConfig(
   return result;
 }
 
+List<Pointer<Void>> eglGetConfigs(Pointer<Void> display, {int maxConfigs = 10}) {
+  final configs = calloc<IntPtr>(maxConfigs);
+  final numConfigs = calloc<Int32>();
+  final nativeCallSucceeded = _libEGL!.eglGetConfigs(
+        display,
+        configs.cast<Pointer<Void>>(),
+        maxConfigs,
+        numConfigs,
+      ) ==
+      1;
+  List<Pointer<Void>> result = <Pointer<Void>>[];
+
+  if (nativeCallSucceeded) {
+    for (var i = 0; i < numConfigs.value; ++i) {
+      result.add(Pointer.fromAddress(configs[i]));
+    }
+  }
+
+  calloc.free(configs);
+  calloc.free(numConfigs);
+
+  if (!nativeCallSucceeded) {
+    throw EglException('Failed to get configs for display [$display], max configs $maxConfigs.');
+  }
+
+  return result;
+}
+
+int eglGetConfigAttrib(Pointer<Void> display, Pointer<Void> config, EglConfigAttribute attribute) {
+  final value = calloc<Int32>();
+  final nativeCallSucceeded = _libEGL!.eglGetConfigAttrib(
+        display,
+        config,
+        attribute.toIntValue(),
+        value.cast(),
+      ) ==
+      1;
+  int result = -1;
+  if (nativeCallSucceeded) {
+    result = value.value;
+  }
+
+  calloc.free(value);
+
+  if (!nativeCallSucceeded) {
+    throw EglException('Failed to get configs attribute for display [$display], attribute:  ${attribute.toString()}.');
+  }
+
+  return result;
+}
+
+void printConfigAttributes(Pointer<Void> display, Pointer<Void> config) {
+  print(
+      '${EglConfigAttribute.alphaMaskSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.alphaMaskSize)}');
+  print(
+      '${EglConfigAttribute.alphaSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.alphaSize)}');
+  print(
+      '${EglConfigAttribute.bindToTextureRgb.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.bindToTextureRgb)}');
+  print(
+      '${EglConfigAttribute.bindToTextureRgba.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.bindToTextureRgba)}');
+  print(
+      '${EglConfigAttribute.blueSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.blueSize)}');
+  print(
+      '${EglConfigAttribute.bufferSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.bufferSize)}');
+  print(
+      '${EglConfigAttribute.colorBufferType.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.colorBufferType)}');
+  print(
+      '${EglConfigAttribute.configCaveat.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.configCaveat)}');
+  print(
+      '${EglConfigAttribute.configId.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.configId)}');
+  print(
+      '${EglConfigAttribute.conformant.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.conformant)}');
+  print(
+      '${EglConfigAttribute.depthSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.depthSize)}');
+  print(
+      '${EglConfigAttribute.greenSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.greenSize)}');
+  print('${EglConfigAttribute.level.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.level)}');
+  print(
+      '${EglConfigAttribute.luminanceSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.luminanceSize)}');
+  print(
+      '${EglConfigAttribute.matchNativePixmap.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.matchNativePixmap)}');
+  print(
+      '${EglConfigAttribute.nativeRenderable.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.nativeRenderable)}');
+  print(
+      '${EglConfigAttribute.maxSwapInterval.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.maxSwapInterval)}');
+  print(
+      '${EglConfigAttribute.minSwapInterval.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.minSwapInterval)}');
+  print('${EglConfigAttribute.redSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.redSize)}');
+  print(
+      '${EglConfigAttribute.sampleBuffers.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.sampleBuffers)}');
+  print('${EglConfigAttribute.samples.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.samples)}');
+  print(
+      '${EglConfigAttribute.stencilSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.stencilSize)}');
+  print(
+      '${EglConfigAttribute.renderableType.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.renderableType)}');
+
+  final surfaceType = eglGetConfigAttrib(display, config, EglConfigAttribute.surfaceType);
+
+  print(
+      'SurfaceType: ${(surfaceType & EGL_MULTISAMPLE_RESOLVE_BOX_BIT) != 0 ? 'EGL_MULTISAMPLE_RESOLVE_BOX_BIT, ' : ''}'
+      '${(surfaceType & EGL_PBUFFER_BIT) != 0 ? 'EGL_PBUFFER_BIT, ' : ''}'
+      '${(surfaceType & EGL_PIXMAP_BIT) != 0 ? 'EGL_PIXMAP_BIT, ' : ''}'
+      '${(surfaceType & EGL_SWAP_BEHAVIOR_PRESERVED_BIT) != 0 ? 'EGL_SWAP_BEHAVIOR_PRESERVED_BIT, ' : ''}'
+      '${(surfaceType & EGL_VG_ALPHA_FORMAT_PRE_BIT) != 0 ? 'EGL_VG_ALPHA_FORMAT_PRE_BIT, ' : ''}'
+      '${(surfaceType & EGL_VG_COLORSPACE_LINEAR_BIT) != 0 ? 'EGL_VG_COLORSPACE_LINEAR_BIT, ' : ''}'
+      '${(surfaceType & EGL_WINDOW_BIT) != 0 ? 'EGL_WINDOW_BIT, ' : ''}');
+  print(
+      '${EglConfigAttribute.transparentType.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.transparentType)}');
+  print(
+      '${EglConfigAttribute.transparentRedValue.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.transparentRedValue)}');
+  print(
+      '${EglConfigAttribute.transparentGreenValue.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.transparentGreenValue)}');
+  print(
+      '${EglConfigAttribute.transparentBlueValue.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.transparentBlueValue)}');
+}
+
 Pointer<Void> eglCreateContext(
   Pointer<Void> display,
   Pointer<Void> config, {
