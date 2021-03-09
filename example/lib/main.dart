@@ -39,7 +39,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     }
 
     resetLessons();
-    lesson = Lesson7();
+    lesson = Lesson6();
 
     /// Updating all Textues takes a slighllty less than 150ms
     /// so we can't get much faster than this at the moment because it could happen that

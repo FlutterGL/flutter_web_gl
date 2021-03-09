@@ -24,10 +24,10 @@ class Lesson5 extends Lesson {
 
   Lesson5() {
     cube = new Cube();
-    loadTexture("dash.png", (WebGLTexture texture, Image data) {
+    loadTexture("dash.png", (WebGLTexture texture, Image data) async {
       gl.pixelStorei(WebGL.UNPACK_ALIGNMENT, 1);
       gl.bindTexture(WebGL.TEXTURE_2D, texture);
-      gl.texImage2DfromImage(
+      await gl.texImage2DfromImage(
         WebGL.TEXTURE_2D,
         data,
         type: WebGL.UNSIGNED_BYTE,

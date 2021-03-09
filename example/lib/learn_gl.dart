@@ -14,12 +14,10 @@
  */
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_web_gl/flutter_web_gl.dart';
 
 part 'cube.dart';
@@ -158,20 +156,19 @@ abstract class Lesson {
 
 /// Load the given image at [url] and call [handle] to execute some GL code.
 /// Return a [Future] to asynchronously notify when the texture is complete.
-Future<WebGLTexture> loadTexture(String url, handle(WebGLTexture tex, Image data)) async {
+Future<WebGLTexture> loadTexture(String url, Future Function(WebGLTexture tex, Image data) handle) async {
   var texture = gl.createTexture();
   final data = await gl.loadImageFromAsset('assets/$url');
-  File('c:\\temp\\fromImage.raw')..writeAsBytesSync((await data.toByteData())!.buffer.asUint8List());
-  handle(texture, data);
+  await handle(texture, data);
   return texture;
 }
 
 /// This is a common handler for [loadTexture]. It will be explained in future
 /// lessons that require textures.
-void handleMipMapTexture(WebGLTexture texture, Image image) {
+Future handleMipMapTexture(WebGLTexture texture, Image image) async {
   gl.pixelStorei(WebGL.UNPACK_ALIGNMENT, 1);
   gl.bindTexture(WebGL.TEXTURE_2D, texture);
-  gl.texImage2DfromImage(
+  await gl.texImage2DfromImage(
     WebGL.TEXTURE_2D,
     image,
     internalformat: WebGL.RGBA,
@@ -192,26 +189,26 @@ void handleMipMapTexture(WebGLTexture texture, Image image) {
   gl.bindTexture(WebGL.TEXTURE_2D, null);
 }
 
-Future<WebGLTexture> loadMipMapTexture(
-  WebGLTexture texture,
-) async {
-  gl.pixelStorei(WebGL.UNPACK_ALIGNMENT, 1);
-  gl.bindTexture(WebGL.TEXTURE_2D, texture);
-  final bytes = await rootBundle.load('assets/fromImage.raw');
-  gl.texImage2D(WebGL.TEXTURE_2D, 0, WebGL.RGBA, 256, 256, 0, WebGL.RGBA, WebGL.UNSIGNED_BYTE, bytes);
-  gl.texParameteri(
-    WebGL.TEXTURE_2D,
-    WebGL.TEXTURE_MAG_FILTER,
-    WebGL.LINEAR,
-  );
-  gl.texParameteri(
-    WebGL.TEXTURE_2D,
-    WebGL.TEXTURE_MIN_FILTER,
-    WebGL.LINEAR_MIPMAP_NEAREST,
-  );
-  gl.generateMipmap(WebGL.TEXTURE_2D);
-  gl.bindTexture(WebGL.TEXTURE_2D, null);
-  return texture;
-}
+// Future<WebGLTexture> loadMipMapTexture(
+//   WebGLTexture texture,
+// ) async {
+//   gl.pixelStorei(WebGL.UNPACK_ALIGNMENT, 1);
+//   gl.bindTexture(WebGL.TEXTURE_2D, texture);
+//   final bytes = await rootBundle.load('assets/fromImage.raw');
+//   gl.texImage2D(WebGL.TEXTURE_2D, 0, WebGL.RGBA, 256, 256, 0, WebGL.RGBA, WebGL.UNSIGNED_BYTE, bytes);
+//   gl.texParameteri(
+//     WebGL.TEXTURE_2D,
+//     WebGL.TEXTURE_MAG_FILTER,
+//     WebGL.LINEAR,
+//   );
+//   gl.texParameteri(
+//     WebGL.TEXTURE_2D,
+//     WebGL.TEXTURE_MIN_FILTER,
+//     WebGL.LINEAR_MIPMAP_NEAREST,
+//   );
+//   gl.generateMipmap(WebGL.TEXTURE_2D);
+//   gl.bindTexture(WebGL.TEXTURE_2D, null);
+//   return texture;
+// }
 // DivElement lessonHook = querySelector("#lesson_html");
 // bool trackFrameRate = false;

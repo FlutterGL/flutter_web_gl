@@ -113,10 +113,14 @@ class FlutterWebGL {
       contextClientVersion: 3,
     );
 
-    final pluginContextAdress =
-        await _channel.invokeMethod<int>('initOpenGL', {'openGLContext': _pluginContext.address});
+    final result = await _channel.invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
+    if (result == null) {
+      throw EglException('Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
+    }
+
+    final pluginContextAdress = result['context'] as int?;
     if (pluginContextAdress == null) {
-      throw EglException('Plugin.initOpenGL didn\'t return an OpenGL context. Something is really wrong!');
+      throw EglException('Plugin.initOpenGL didn\'t return a Context. Something is really wrong!');
     }
 
     final returnedPluginContext = Pointer<Void>.fromAddress(pluginContextAdress);
@@ -127,6 +131,12 @@ class FlutterWebGL {
       eglDestroyContext(_display, _pluginContext);
     }
 
+    final dummySurfacePointer = result['dummySurface'] as int?;
+    if (dummySurfacePointer == null) {
+      throw EglException('Plugin.initOpenGL didn\'t return a dummy surface. Something is really wrong!');
+    }
+    _dummySurface = Pointer<Void>.fromAddress(dummySurfacePointer);
+
     _baseAppContext = eglCreateContext(_display, _config,
 
         /// we link both contexts so that app and plugin can share OpenGL Objects
@@ -134,11 +144,11 @@ class FlutterWebGL {
         contextClientVersion: 3,
         isDebugContext: debug);
 
-    /// to make a context current you have to provide some texture even if you don't use it afterwards
-    _dummySurface = eglCreatePbufferSurface(_display, _config, attributes: {
-      EglSurfaceAttributes.width: 16,
-      EglSurfaceAttributes.height: 16,
-    });
+    // /// to make a context current you have to provide some texture even if you don't use it afterwards
+    // _dummySurface = eglCreatePbufferSurface(_display, _config, attributes: {
+    //   EglSurfaceAttributes.width: 16,
+    //   EglSurfaceAttributes.height: 16,
+    // });
 
     /// bind context to this thread. All following OpenGL calls from this thread will use this context
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);

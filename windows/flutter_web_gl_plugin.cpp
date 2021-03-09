@@ -259,9 +259,10 @@ void FlutterWebGlPlugin::HandleMethodCall(
       };
 
       // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
-      auto surface = eglCreatePbufferSurface(display, config, surfaceAttributes);
+      auto dummySurface = eglCreatePbufferSurface(display, config, surfaceAttributes);
+      auto dummySurfaceForDartSide = eglCreatePbufferSurface(display, config, surfaceAttributes);
       
-      eglMakeCurrent(display, surface, surface, context);
+      eglMakeCurrent(display, dummySurface, dummySurface, context);
 
       auto v = glGetString(GL_VENDOR);
       int error = glGetError();
@@ -275,7 +276,12 @@ void FlutterWebGlPlugin::HandleMethodCall(
 
       /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
       /// from Dart Isolates.
-      auto response = flutter::EncodableValue((int64_t) context );
+      auto response = flutter::EncodableValue(flutter::EncodableMap{
+          {flutter::EncodableValue("context"),
+           flutter::EncodableValue((int64_t) context)},
+          {flutter::EncodableValue("dummySurface"),
+           flutter::EncodableValue((int64_t) dummySurfaceForDartSide)}
+          });
       result->Success(response);
       return;
   }

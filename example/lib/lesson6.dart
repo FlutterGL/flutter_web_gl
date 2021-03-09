@@ -61,12 +61,11 @@ class Lesson6 extends Lesson {
     gl.useProgram(program.program);
 
     // Do some extra texture filters after loading the create texture
-    loadTexture("crate.gif", (WebGLTexture text, Image data) {
-      gl.pixelStorei(WebGL.UNPACK_FLIP_Y_WEBGL, 1);
+    loadTexture("crate.gif", (WebGLTexture text, Image data) async {
       textures.add(text);
 
       gl.bindTexture(WebGL.TEXTURE_2D, textures[0]);
-      gl.texImage2DfromImage(
+      await gl.texImage2DfromImage(
         WebGL.TEXTURE_2D,
         data,
         type: WebGL.UNSIGNED_BYTE,
@@ -102,7 +101,7 @@ class Lesson6 extends Lesson {
 
       textures.add(gl.createTexture());
       gl.bindTexture(WebGL.TEXTURE_2D, textures[2]);
-      gl.texImage2DfromImage(
+      await gl.texImage2DfromImage(
         WebGL.TEXTURE_2D,
         data,
         type: WebGL.UNSIGNED_BYTE,
@@ -136,8 +135,6 @@ class Lesson6 extends Lesson {
 
   void drawScene(int viewWidth, int viewHeight, double aspect) {
     if (!isLoaded) return;
-    // Basic viewport setup and clearing of the screen
-    gl.viewport(0, 0, viewWidth, viewHeight);
     gl.clear(WebGL.COLOR_BUFFER_BIT | WebGL.DEPTH_BUFFER_BIT);
     gl.enable(WebGL.DEPTH_TEST);
     gl.disable(WebGL.BLEND);
