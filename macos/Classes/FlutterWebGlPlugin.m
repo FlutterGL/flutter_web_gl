@@ -3,12 +3,101 @@
 #import "MetalANGLE/angle_gl.h"
 
 
+
+@implementation OpenGLException
+
+- (instancetype) initWithMessage: (NSString*) message andError: (int) error
+{
+    self = [super init];
+    if (self){
+    _message = message;
+    _errorCode = error;
+    }
+    return self;
+}
+
+@end
+
+
+
+@implementation FlutterGlTexture
+- (instancetype)initWithWidth:(int) width andHeight:(int)height registerWidth:(NSObject<FlutterTextureRegistry>*) registry{
+    self = [super init];
+    if (self){
+        CFDictionaryRef empty;
+        CFMutableDictionaryRef attrs;
+        empty = CFDictionaryCreate(kCFAllocatorDefault,
+                                   NULL,
+                                   NULL,
+                                   0,
+                                   &kCFTypeDictionaryKeyCallBacks,
+                                   &kCFTypeDictionaryValueCallBacks);
+        
+        attrs = CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
+                                          &kCFTypeDictionaryKeyCallBacks,
+                                          &kCFTypeDictionaryValueCallBacks);
+        
+        CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+
+        CVPixelBufferCreate(kCFAllocatorDefault, width, height,
+                            kCVPixelFormatType_32RGBA, attrs, &_pixelsData);
+        _flutterTextureId = [registry registerTexture:self];
+
+    }
+    
+    return self;
+}
+
+
+#pragma mark - FlutterTexture
+
+- (CVPixelBufferRef)copyPixelBuffer {
+    CVBufferRetain(_pixelsData);
+    return _pixelsData;
+}
+
+@end
+
+/*
+FlutterGLTexture
+{
+public:
+  virtual ~FlutterGLTexture();
+  const FlutterDesktopPixelBuffer *CopyPixelBuffer(size_t width, size_t height);
+
+ std::unique_ptr<FlutterDesktopPixelBuffer> buffer;
+  GLuint fbo;
+  GLuint rbo;
+  int64_t flutterTextureId;
+  std::unique_ptr<flutter::TextureVariant> flutterTexture;
+private:
+  std::unique_ptr<uint8_t> pixels;
+  size_t request_count_ = 0;
+
+
+};
+*/
+
+@interface FlutterWebGlPlugin()
+@property (nonatomic, strong) NSObject<FlutterTextureRegistry> *textureRegistry;
+@end
+
 @implementation FlutterWebGlPlugin
+
+- (instancetype)initWithTextures:(NSObject<FlutterTextureRegistry> *)textures {
+    self = [super init];
+    if (self) {
+        _textureRegistry = textures;
+    }
+    return self;
+}
+
+
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     FlutterMethodChannel* channel =
           [FlutterMethodChannel methodChannelWithName:@"flutter_web_gl"
                                       binaryMessenger:[registrar messenger]];
-    FlutterWebGlPlugin* instance = [[FlutterWebGlPlugin alloc] init];
+    FlutterWebGlPlugin* instance = [[FlutterWebGlPlugin alloc] initWithTextures:[registrar textures]];
     [registrar addMethodCallDelegate:instance channel:channel];
     
 }
@@ -64,20 +153,31 @@
         EGLBoolean chooseConfigResult = eglChooseConfig(display,attribute_list,&config,1,&num_config);
         if (chooseConfigResult != 1)
         {
-            result([FlutterError errorWithCode: @"EGL InitError" message: @"eglChooseConfig failed"  details:NULL]);
+            result([FlutterError errorWithCode: @"EGL InitError" message: @"Failed to call eglCreateWindowSurface()"  details:NULL]);
             return;
         }
 
-        const EGLint surfaceAttributes[] = {
-          EGL_WIDTH, 16,
-          EGL_HEIGHT, 16,
-          EGL_NONE
-        };
 
         // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
-        EGLSurface surface = eglCreatePbufferSurface(display, config, surfaceAttributes);
+        CALayer* dummyLayer       = [[CALayer alloc] init];
+        dummyLayer.frame = CGRectMake(0, 0, 1, 1);
+        CALayer* dummyLayer2       = [[CALayer alloc] init];
+        dummyLayer2.frame = CGRectMake(0, 0, 1, 1);
+
+        EGLSurface dummySurfaceForDartSide = eglCreateWindowSurface(display, config,(__bridge EGLNativeWindowType)dummyLayer, NULL);
+        EGLSurface dummySurface = eglCreateWindowSurface(display,
+            config,(__bridge EGLNativeWindowType)dummyLayer2, NULL);
         
-        eglMakeCurrent(display, surface, surface, context);
+        if ((dummySurfaceForDartSide == EGL_NO_SURFACE) || (dummySurface == EGL_NO_SURFACE))
+        {
+            result([FlutterError errorWithCode: @"EGL InitError" message: @"Dummy Surface creation failed"  details:NULL]);
+            return;
+
+        }
+        if (eglMakeCurrent(display, dummySurface, dummySurface, context)!=1)
+        {
+            NSLog(@"MakeCurrent failed: %d",eglGetError());
+        }
 
         char* v = (char*) glGetString(GL_VENDOR);
         int error = glGetError();
@@ -88,10 +188,73 @@
         char* r = (char*) glGetString(GL_RENDERER);
         char* v2 = (char*) glGetString(GL_VERSION);
 
-        // NSLog(@"%@\n%@\n%@\n",[[NSString alloc] initWithUTF8String: v],[[NSString alloc] initWithUTF8String: r],[[NSString alloc] initWithUTF8String: v2]);
+        if (v==NULL)
+        {
+            NSLog(@"GetString: GL_VENDOR returned NULL");
+        }
+        if (r==NULL)
+        {
+            NSLog(@"GetString: GL_RENDERER returned NULL");
+        }
+        if (v2==NULL)
+        {
+            NSLog(@"GetString: GL_VERSION returned NULL");
+        }
+       NSLog(@"%@\n%@\n%@\n",[[NSString alloc] initWithUTF8String: v],[[NSString alloc] initWithUTF8String: r],[[NSString alloc] initWithUTF8String: v2]);
         /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
         /// from Dart Isolates.
-        result([NSNumber numberWithLong: (long)context]);
+        result(@{@"context" : [NSNumber numberWithLong: (long)context],
+                 @"dummySurface" : [NSNumber numberWithLong: (long)dummySurfaceForDartSide]
+               });
+        return;
+        
+    }
+    if ([call.method isEqualToString:@"createTexture"]) {
+        NSNumber* width;
+        NSNumber* height;
+        if (call.arguments) {
+            width = call.arguments[@"width"];
+            if (width == NULL)
+            {
+                result([FlutterError errorWithCode: @"CreateTexture Error" message: @"No width received by the native part of FlutterGL.createTexture"  details:NULL]);
+                return;
+
+            }
+            height = call.arguments[@"Height"];
+            if (height == NULL)
+            {
+                result([FlutterError errorWithCode: @"CreateTexture Error" message: @"No height received by the native part of FlutterGL.createTexture"  details:NULL]);
+                return;
+
+            }
+        }
+        else
+        {
+          result([FlutterError errorWithCode: @"No arguments" message: @"No arguments received by the native part of FlutterGL.createTexture"  details:NULL]);
+          return;
+        }
+
+        
+        
+
+        FlutterGlTexture* flutterGLTexture;
+        @try
+        {
+            flutterGLTexture = [[FlutterGlTexture alloc] initWithWidth:640 andHeight:320 registerWidth:_textureRegistry];
+        }
+        @catch (OpenGLException* ex)
+        {
+            result([FlutterError errorWithCode: [@( [ex errorCode]) stringValue]
+                                       message: [@"Error creating FlutterGLTextureObjec: " stringByAppendingString:[ex message]] details:NULL]);
+            return;
+        }
+
+//        flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
+        result(@{
+           @"textureId" : [NSNumber numberWithLongLong: [flutterGLTexture flutterTextureId]],
+           @"rbo": [NSNumber numberWithLongLong: [ flutterGLTexture rbo]]
+        });
+
         return;
     }
         if ([call.method isEqualToString:@"getAll"]) {

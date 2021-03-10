@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -58,10 +59,14 @@ class FlutterWebGL {
   static int? _activeFramebuffer;
 
   static LibOpenGLES get rawOpenGl {
-    final libPath = resolveDylibPath(
-      'libGLESv2',
-    );
-    return _libOpenGLES ??= LibOpenGLES(DynamicLibrary.open(libPath));
+    if (_libOpenGLES == null) {
+      if (Platform.isMacOS || Platform.isIOS) {
+        _libOpenGLES = LibOpenGLES(DynamicLibrary.process());
+      } else {
+        _libOpenGLES = LibOpenGLES(DynamicLibrary.open(resolveDylibPath('libGLESv2')));
+      }
+    }
+    return _libOpenGLES!;
   }
 
   static RenderingContext getWebGLContext() {
@@ -100,12 +105,13 @@ class FlutterWebGL {
 
     _config = chooseConfigResult[0];
 
-    final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
-    print('Number of configs ${existingConfigs.length}');
-    for (int i = 0; i < existingConfigs.length; i++) {
-      print('\nConfig No: $i');
-      printConfigAttributes(_display, existingConfigs[i]);
-    }
+    // The following code is helpful to debug EGL issues
+    // final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
+    // print('Number of configs ${existingConfigs.length}');
+    // for (int i = 0; i < existingConfigs.length; i++) {
+    //   print('\nConfig No: $i');
+    //   printConfigAttributes(_display, existingConfigs[i]);
+    // }
 
     _pluginContext = eglCreateContext(
       _display,
@@ -153,7 +159,7 @@ class FlutterWebGL {
     /// bind context to this thread. All following OpenGL calls from this thread will use this context
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
 
-    if (debug) {
+    if (debug && Platform.isWindows) {
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT);
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
       rawOpenGl.glDebugMessageCallback(Pointer.fromFunction<GLDEBUGPROC>(glDebugOutput), nullptr);

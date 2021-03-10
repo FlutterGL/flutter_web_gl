@@ -14,7 +14,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
 
 SPEC CHECKSUMS:
-  flutter_web_gl: 5f500e5a87ad759e80b4bd264a344c5ce6509fc9
+  flutter_web_gl: 4d96ed629943403a1e17d118b3f1ca9d3d033821
   FlutterMacOS: 57701585bf7de1b3fc2bb61f6378d73bbdea8424
 
 PODFILE CHECKSUM: a884f6dd3f7494f3892ee6c81feea3a3abbf9153
