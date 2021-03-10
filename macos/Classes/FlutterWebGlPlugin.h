@@ -16,7 +16,7 @@
 @property (nonatomic,assign) GLuint fbo;
 @property (nonatomic,assign) GLuint rbo;
 @property (nonatomic,assign) int64_t flutterTextureId;
-@property (nonatomic) CVPixelBufferRef  pixelsData;
+@property (nonatomic) CVPixelBufferRef  pixelData;
 
 
 @end

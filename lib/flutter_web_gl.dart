@@ -253,28 +253,28 @@ class FlutterWebGL {
     final newTexture = FlutterGLTexture.fromMap(result, fbo.value, width, height);
 
     print(rawOpenGl.glGetError());
-    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
+    // rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
 
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
-    var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
-      print("Framebuffer (color) check failed: $frameBufferCheck");
-    }
+    // rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
+    // var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    // if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
+    //   print("Framebuffer (color) check failed: $frameBufferCheck");
+    // }
 
-    Pointer<Int32> depthBuffer = calloc();
-    rawOpenGl.glGenRenderbuffers(1, depthBuffer.cast());
-    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.value);
-    rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+    // Pointer<Int32> depthBuffer = calloc();
+    // rawOpenGl.glGenRenderbuffers(1, depthBuffer.cast());
+    // rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.value);
+    // rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
 
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer.value);
-    frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
-      print("Framebuffer (depth) check failed: $frameBufferCheck");
-    }
-    rawOpenGl.glViewport(0, 0, width, height);
-    _activeFramebuffer = fbo.value;
+    // rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer.value);
+    // frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    // if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
+    //   print("Framebuffer (depth) check failed: $frameBufferCheck");
+    // }
+    // rawOpenGl.glViewport(0, 0, width, height);
+    // _activeFramebuffer = fbo.value;
 
-    calloc.free(fbo);
+    // calloc.free(fbo);
     return newTexture;
   }
 

@@ -24,23 +24,18 @@
 - (instancetype)initWithWidth:(int) width andHeight:(int)height registerWidth:(NSObject<FlutterTextureRegistry>*) registry{
     self = [super init];
     if (self){
-        CFDictionaryRef empty;
-        CFMutableDictionaryRef attrs;
-        empty = CFDictionaryCreate(kCFAllocatorDefault,
-                                   NULL,
-                                   NULL,
-                                   0,
-                                   &kCFTypeDictionaryKeyCallBacks,
-                                   &kCFTypeDictionaryValueCallBacks);
-        
-        attrs = CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
-                                          &kCFTypeDictionaryKeyCallBacks,
-                                          &kCFTypeDictionaryValueCallBacks);
-        
-        CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+        NSDictionary* options = @{
+          // This key is required to generate SKPicture with CVPixelBufferRef in metal.
+          (NSString*)kCVPixelBufferMetalCompatibilityKey : @YES
+        };
 
-        CVPixelBufferCreate(kCFAllocatorDefault, width, height,
-                            kCVPixelFormatType_32RGBA, attrs, &_pixelsData);
+        CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, width, height,
+                                              kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)options, &_pixelData);
+        if (status != 0)
+        {
+            NSLog(@"CVPixelBufferCreate error %d", (int)status);
+        }
+
         _flutterTextureId = [registry registerTexture:self];
 
     }
@@ -52,8 +47,8 @@
 #pragma mark - FlutterTexture
 
 - (CVPixelBufferRef)copyPixelBuffer {
-    CVBufferRetain(_pixelsData);
-    return _pixelsData;
+    CVBufferRetain(_pixelData);
+    return _pixelData;
 }
 
 @end
@@ -80,6 +75,8 @@ private:
 
 @interface FlutterWebGlPlugin()
 @property (nonatomic, strong) NSObject<FlutterTextureRegistry> *textureRegistry;
+@property (nonatomic,strong) FlutterGlTexture* flutterGLTexture;
+
 @end
 
 @implementation FlutterWebGlPlugin
@@ -220,7 +217,7 @@ private:
                 return;
 
             }
-            height = call.arguments[@"Height"];
+            height = call.arguments[@"height"];
             if (height == NULL)
             {
                 result([FlutterError errorWithCode: @"CreateTexture Error" message: @"No height received by the native part of FlutterGL.createTexture"  details:NULL]);
@@ -237,10 +234,9 @@ private:
         
         
 
-        FlutterGlTexture* flutterGLTexture;
         @try
         {
-            flutterGLTexture = [[FlutterGlTexture alloc] initWithWidth:640 andHeight:320 registerWidth:_textureRegistry];
+            _flutterGLTexture = [[FlutterGlTexture alloc] initWithWidth:640 andHeight:320 registerWidth:_textureRegistry];
         }
         @catch (OpenGLException* ex)
         {
@@ -251,8 +247,8 @@ private:
 
 //        flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
         result(@{
-           @"textureId" : [NSNumber numberWithLongLong: [flutterGLTexture flutterTextureId]],
-           @"rbo": [NSNumber numberWithLongLong: [ flutterGLTexture rbo]]
+           @"textureId" : [NSNumber numberWithLongLong: [_flutterGLTexture flutterTextureId]],
+           @"rbo": [NSNumber numberWithLongLong: [_flutterGLTexture  rbo]]
         });
 
         return;

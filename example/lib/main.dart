@@ -30,7 +30,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    await FlutterWebGL.initOpenGL(true);
+    //await FlutterWebGL.initOpenGL(true);
 
     try {
       textures.add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
