@@ -177,6 +177,7 @@ class _MyAppState extends State<MyApp> {
     gl.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Pointer<Void>.fromAddress(0).cast());
     gl.glEnableVertexAttribArray(0);
     gl.glDrawArrays(GL_TRIANGLES, 0, 3);
+    gl.glFlush();
   }
 }
 
