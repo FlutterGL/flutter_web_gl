@@ -18,17 +18,18 @@ part 'web_gl.dart';
 class FlutterGLTexture {
   final int textureId;
   final int rboId;
+  final int metalAsGLTextureId;
   final int fboId;
   final int width;
   final int height;
-  FlutterGLTexture(this.textureId, this.rboId, this.fboId, this.width, this.height);
+  FlutterGLTexture(this.textureId, this.rboId, this.metalAsGLTextureId, this.fboId, this.width, this.height);
 
   static FlutterGLTexture fromMap(dynamic map, int fboId, int width, int height) {
-    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int, fboId, width, height);
+    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int, map['metalAsGLTexture'] as int, fboId, width, height);
   }
 
   Map<String, int> toMap() {
-    return {'textureId': textureId, 'rbo': rboId};
+    return {'textureId': textureId, 'rbo': rboId, 'metalAsGLTexture': metalAsGLTextureId };
   }
 
   /// Whenever you finished your rendering you have to call this function to signal
@@ -254,9 +255,16 @@ class FlutterWebGL {
     final newTexture = FlutterGLTexture.fromMap(result, fbo.value, width, height);
 
     print(rawOpenGl.glGetError());
-    rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
 
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
+    if (newTexture.metalAsGLTextureId != 0) {
+      // Draw to metal interop texture directly
+      rawOpenGl.glBindTexture(GL_TEXTURE_2D, newTexture.metalAsGLTextureId);
+      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexture.metalAsGLTextureId, 0);
+    }
+    else {
+      rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
+      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
+    }
     var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
       print("Framebuffer (color) check failed: ${frameBufferCheck.toRadixString(16)}");
@@ -300,7 +308,13 @@ class FlutterWebGL {
 
   static void activateTexture(FlutterGLTexture texture) {
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, texture.fboId);
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, texture.rboId);
+    if (texture.metalAsGLTextureId != 0) {
+      // Draw to metal interop texture directly
+      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.metalAsGLTextureId, 0);
+    }
+    else {
+      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, texture.rboId);
+    }
     printOpenGLError('activateTextue ${texture.textureId}');
     _activeFramebuffer = texture.fboId;
   }
