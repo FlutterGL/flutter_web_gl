@@ -19,6 +19,8 @@
 @property (nonatomic,assign) GLuint rbo;
 @property (nonatomic,assign) int64_t flutterTextureId;
 @property (nonatomic) CVPixelBufferRef  pixelData;
+// Metal -> GL interop texture
+@property (nonatomic, readonly) GLuint metalAsGLTexture;
 
 
 @end

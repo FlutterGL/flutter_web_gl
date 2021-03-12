@@ -1,8 +1,25 @@
 #import "FlutterWebGlPlugin.h"
 #import "MetalANGLE/EGL/egl.h"
+#define EGL_EGLEXT_PROTOTYPES
+#import "MetalANGLE/EGL/eglext.h"
+#import "MetalANGLE/EGL/eglext_angle.h"
 #import "MetalANGLE/angle_gl.h"
 
+// Get metal device used by MetalANGLE.
+// This can return nil if the MetalANGLE is not currently using Metal back-end. For example, the
+// target device is running iOS version < 11.0 or macOS version < 13.0
+static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
+{
+    EGLAttrib angleDevice = 0;
+    EGLAttrib device      = 0;
+    if (eglQueryDisplayAttribEXT(display, EGL_DEVICE_EXT, &angleDevice) != EGL_TRUE)
+        return nil;
 
+    if (eglQueryDeviceAttribEXT((EGLDeviceEXT)(angleDevice), EGL_MTL_DEVICE_ANGLE, &device) != EGL_TRUE)
+        return nil;
+
+    return (__bridge id<MTLDevice>)(void *)(device);
+}
 
 @implementation OpenGLException
 
@@ -18,7 +35,13 @@
 
 @end
 
-
+@interface FlutterGlTexture() {
+    CVMetalTextureCacheRef _metalTextureCache;
+    CVMetalTextureRef _metalTextureCVRef;
+    id<MTLTexture> _metalTexture;
+    EGLImageKHR _metalAsEGLImage;
+}
+@end
 
 @implementation FlutterGlTexture
 - (instancetype)initWithWidth:(int) width andHeight:(int)height registerWidth:(NSObject<FlutterTextureRegistry>*) registry{
@@ -38,29 +61,36 @@
             NSLog(@"CVPixelBufferCreate error %d", (int)status);
         }
         
-        // CVPixelBufferLockBaseAddress(_pixelData, 0);
-        // UInt32* buffer = (UInt32*)CVPixelBufferGetBaseAddress(_pixelData);
-        // for ( unsigned long i = 0; i < width * height; i++ )
-        // {
-        //     buffer[i] = CFSwapInt32HostToBig(0x00ff00ff);
-        // }
-        // CVPixelBufferUnlockBaseAddress(_pixelData, 0);
-        
+        CVPixelBufferLockBaseAddress(_pixelData, 0);
+        UInt32* buffer = (UInt32*)CVPixelBufferGetBaseAddress(_pixelData);
+        for ( unsigned long i = 0; i < width * height; i++ )
+        {
+            buffer[i] = CFSwapInt32HostToBig(0x00ff00ff);
+        }
+        CVPixelBufferUnlockBaseAddress(_pixelData, 0);
+
+        [self createMtlTextureFromCVPixBufferWithWidth:width andHeight:height];
         glGenFramebuffers(1, &_fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
 
-        glGenRenderbuffers(1, &_rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, _rbo);
-
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
-        int error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            NSLog(@"GlError while allocating Renderbuffer %d\n", error);
-            
-            @throw [[OpenGLException alloc] initWithMessage: @"GlError while allocating Renderbuffer"   andError: error];
+        int error;
+        if (_metalAsGLTexture) {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _metalAsGLTexture, 0);
         }
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,_rbo);
+        else {
+            // use offscreen renderbuffer as fallback if Metal back-end is not available
+            glGenRenderbuffers(1, &_rbo);
+            glBindRenderbuffer(GL_RENDERBUFFER, _rbo);
+
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+            error = glGetError();
+            if (error != GL_NO_ERROR)
+            {
+                NSLog(@"GlError while allocating Renderbuffer %d\n", error);
+                @throw [[OpenGLException alloc] initWithMessage: @"GlError while allocating Renderbuffer"   andError: error];
+            }
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,_rbo);
+        }
         int frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -80,6 +110,67 @@
     return self;
 }
 
+- (void)dealloc {
+    // TODO: deallocate GL resources
+    _metalTexture = nil;
+    if (_metalTextureCVRef) {
+        CFRelease(_metalTextureCVRef);
+        _metalTextureCVRef = nil;
+    }
+    if (_metalTextureCache) {
+        CFRelease(_metalTextureCache);
+        _metalTextureCache = nil;
+    }
+    CVPixelBufferRelease(_pixelData);
+}
+
+- (void)createMtlTextureFromCVPixBufferWithWidth:(int) width andHeight:(int)height {
+    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    // Create Metal texture backed by CVPixelBuffer
+    id<MTLDevice> mtlDevice = GetANGLEMtlDevice(display);
+    // if mtlDevice is nil, fall-back to CPU readback via glReadPixels
+    if (!mtlDevice)
+        return;
+
+    CVReturn status = CVMetalTextureCacheCreate(kCFAllocatorDefault,
+                                                nil,
+                                                mtlDevice,
+                                                nil,
+                                                &_metalTextureCache);
+    if (status != 0)
+    {
+        NSLog(@"CVMetalTextureCacheCreate error %d", (int)status);
+    }
+
+    status = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
+                                                       _metalTextureCache,
+                                                       _pixelData, nil,
+                                                       MTLPixelFormatBGRA8Unorm,
+                                                       width, height,
+                                                       0,
+                                                       &_metalTextureCVRef);
+    if (status != 0)
+    {
+        NSLog(@"CVMetalTextureCacheCreateTextureFromImage error %d", (int)status);
+    }
+    _metalTexture = CVMetalTextureGetTexture(_metalTextureCVRef);
+
+    // Create EGL image backed by Metal texture
+    EGLint attribs[] = {
+        EGL_NONE,
+    };
+    _metalAsEGLImage =
+        eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_MTL_TEXTURE_MGL,
+                          (__bridge EGLClientBuffer)(_metalTexture), attribs);
+
+    // Create a texture target to bind the egl image
+    glGenTextures(1, &_metalAsGLTexture);
+    glBindTexture(GL_TEXTURE_2D, _metalAsGLTexture);
+
+    PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES =
+        (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, _metalAsEGLImage);
+}
 
 #pragma mark - FlutterTexture
 
@@ -263,7 +354,8 @@
 //        flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
         result(@{
            @"textureId" : [NSNumber numberWithLongLong: [_flutterGLTexture flutterTextureId]],
-           @"rbo": [NSNumber numberWithLongLong: [_flutterGLTexture  rbo]]
+           @"rbo": [NSNumber numberWithLongLong: [_flutterGLTexture  rbo]],
+           @"metalAsGLTexture": [NSNumber numberWithLongLong: [_flutterGLTexture  metalAsGLTexture]]
         });
 
         return;
@@ -296,13 +388,22 @@
                 
 */
                 FlutterGlTexture* currentTexture = _flutterGLTexture;
+
+            if (currentTexture.metalAsGLTexture) {
+                // DO NOTHING, metal texture is automatically updated
+            }
+            else {
                 glBindFramebuffer(GL_FRAMEBUFFER, currentTexture.fbo);
 
                 CVPixelBufferLockBaseAddress([currentTexture pixelData], 0);
                 void* buffer = (void*)CVPixelBufferGetBaseAddress([currentTexture pixelData]);
 
-                 glReadPixels(0, 0, (GLsizei)[currentTexture width], (GLsizei)currentTexture.height,  GL_RGBA, GL_UNSIGNED_BYTE, (void*)buffer);
+                 glReadPixels(0, 0, (GLsizei)[currentTexture width], (GLsizei)currentTexture.height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)buffer);
+
+                // TODO: swap red & blue channels byte by byte
+
                 CVPixelBufferUnlockBaseAddress([currentTexture pixelData],0);
+            }
 
                 [_textureRegistry textureFrameAvailable:[currentTexture flutterTextureId]];
                 
