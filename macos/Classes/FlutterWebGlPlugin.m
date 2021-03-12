@@ -24,6 +24,8 @@
 - (instancetype)initWithWidth:(int) width andHeight:(int)height registerWidth:(NSObject<FlutterTextureRegistry>*) registry{
     self = [super init];
     if (self){
+        _width = width;
+        _height = height;
         NSDictionary* options = @{
           // This key is required to generate SKPicture with CVPixelBufferRef in metal.
           (NSString*)kCVPixelBufferMetalCompatibilityKey : @YES
@@ -34,6 +36,41 @@
         if (status != 0)
         {
             NSLog(@"CVPixelBufferCreate error %d", (int)status);
+        }
+        
+        CVPixelBufferLockBaseAddress(_pixelData, 0);
+        UInt32* buffer = (UInt32*)CVPixelBufferGetBaseAddress(_pixelData);
+        for ( unsigned long i = 0; i < width * height; i++ )
+        {
+            buffer[i] = CFSwapInt32HostToBig(0x00ff00ff);
+        }
+        CVPixelBufferUnlockBaseAddress(_pixelData, 0);
+        
+        glGenFramebuffers(1, &_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+
+        glGenRenderbuffers(1, &_rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, _rbo);
+
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+        int error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            NSLog(@"GlError while allocating Renderbuffer %d\n", error);
+            
+            @throw [[OpenGLException alloc] initWithMessage: @"GlError while allocating Renderbuffer"   andError: error];
+        }
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,_rbo);
+        int frameBufferCheck = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE)
+        {
+            NSLog(@"GFramebuffer error %d\n", frameBufferCheck);
+            @throw [[OpenGLException alloc] initWithMessage: @"Framebuffer error"   andError: frameBufferCheck];
+        }
+        error = glGetError() ;
+        if( error != GL_NO_ERROR)
+        {
+            NSLog(@"GlError while allocating Renderbuffer %d\n", error);
         }
 
         _flutterTextureId = [registry registerTexture:self];
@@ -53,25 +90,6 @@
 
 @end
 
-/*
-FlutterGLTexture
-{
-public:
-  virtual ~FlutterGLTexture();
-  const FlutterDesktopPixelBuffer *CopyPixelBuffer(size_t width, size_t height);
-
- std::unique_ptr<FlutterDesktopPixelBuffer> buffer;
-  GLuint fbo;
-  GLuint rbo;
-  int64_t flutterTextureId;
-  std::unique_ptr<flutter::TextureVariant> flutterTexture;
-private:
-  std::unique_ptr<uint8_t> pixels;
-  size_t request_count_ = 0;
-
-
-};
-*/
 
 @interface FlutterWebGlPlugin()
 @property (nonatomic, strong) NSObject<FlutterTextureRegistry> *textureRegistry;
@@ -231,12 +249,9 @@ private:
           return;
         }
 
-        
-        
-
         @try
         {
-            _flutterGLTexture = [[FlutterGlTexture alloc] initWithWidth:640 andHeight:320 registerWidth:_textureRegistry];
+            _flutterGLTexture = [[FlutterGlTexture alloc] initWithWidth:width.intValue andHeight:height.intValue registerWidth:_textureRegistry];
         }
         @catch (OpenGLException* ex)
         {
@@ -253,6 +268,48 @@ private:
 
         return;
     }
+        if ([call.method isEqualToString:@"updateTexture"]) {
+            NSNumber* textureId;
+            if (call.arguments) {
+                textureId = call.arguments[@"textureId"];
+                if (textureId == NULL)
+                {
+                    result([FlutterError errorWithCode: @"updateTexture Error" message: @"no texture id received by the native part of FlutterGL.updateTexture"  details:NULL]);
+                    return;
+
+                }
+            }
+            else
+            {
+              result([FlutterError errorWithCode: @"No arguments" message: @"No arguments received by the native part of FlutterGL.updateTexture"  details:NULL]);
+              return;
+            }
+
+                // Check if the received ID is registered
+/*                if (flutterGLTextures.find(textureId) == flutterGLTextures.end())
+                {
+                    result->Error("Invalid texture ID", "Invalid Texture ID: " + std::to_string(textureId));
+                    return;
+                }
+
+                auto currentTexture = flutterGLTextures[textureId].get();
+                
+*/
+                FlutterGlTexture* currentTexture = _flutterGLTexture;
+                glBindFramebuffer(GL_FRAMEBUFFER, currentTexture.fbo);
+
+                CVPixelBufferLockBaseAddress([currentTexture pixelData], 0);
+                void* buffer = (void*)CVPixelBufferGetBaseAddress([currentTexture pixelData]);
+
+                 glReadPixels(0, 0, (GLsizei)[currentTexture width], (GLsizei)currentTexture.height, GL_RGBA, GL_UNSIGNED_BYTE, (void*)buffer);
+                CVPixelBufferUnlockBaseAddress([currentTexture pixelData],0);
+
+                [_textureRegistry textureFrameAvailable:[currentTexture flutterTextureId]];
+                
+                result(nil);
+            return;
+            }
+        
         if ([call.method isEqualToString:@"getAll"]) {
         result(@{
           @"appName" : [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"]
@@ -268,3 +325,4 @@ private:
   }
 }
 @end
+
