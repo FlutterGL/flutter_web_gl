@@ -30,7 +30,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    //await FlutterWebGL.initOpenGL(true);
+    await FlutterWebGL.initOpenGL(true);
 
     try {
       textures.add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
@@ -39,8 +39,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       return;
     }
 
-    // resetLessons();
-    // lesson = Lesson7();
+    resetLessons();
+    lesson = Lesson5();
 
     // /// Updating all Textues takes a slighllty less than 150ms
     // /// so we can't get much faster than this at the moment because it could happen that
@@ -51,9 +51,9 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     setState(() {
       textureId = textures[0].textureId;
     });
-    // // timer = Timer.periodic(const Duration(milliseconds: 16), updateTexture);
-    // ticker = createTicker(updateTexture);
-    // //ticker.start();
+    // timer = Timer.periodic(const Duration(milliseconds: 16), updateTexture);
+    ticker = createTicker(updateTexture);
+    ticker.start();
   }
 
   Timer? timer;
