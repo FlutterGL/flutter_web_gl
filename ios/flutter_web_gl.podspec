@@ -19,9 +19,9 @@ A new flutter plugin project.
   s.dependency 'Flutter'
 
   s.platform = :ios, '11.0'
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }  
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }  
   s.swift_version = '5.0'
-  
+
   s.preserve_paths = 'MetalANGLE.framework'
   s.xcconfig = { 'OTHER_LDFLAGS' => '-framework MetalANGLE', 'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/MetalANGLE.framework/Headers"'}
   s.vendored_frameworks = 'MetalANGLE.framework'
