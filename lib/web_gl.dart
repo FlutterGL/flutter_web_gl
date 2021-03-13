@@ -1166,25 +1166,19 @@ class RenderingContext {
 
   Pointer<Float> floatListToArrayPointer(List<double> list) {
     final ptr = calloc<Float>(list.length);
-    for (var i = 0; i < list.length; i++) {
-      ptr.elementAt(i).value = list[i];
-    }
+    ptr.asTypedList(list.length).setAll(0, list);
     return ptr;
   }
 
   Pointer<Int32> int32ListToArrayPointer(List<int> list) {
     final ptr = calloc<Int32>(list.length);
-    for (var i = 0; i < list.length; i++) {
-      ptr.elementAt(i).value = list[i];
-    }
+    ptr.asTypedList(list.length).setAll(0, list);
     return ptr;
   }
 
   Pointer<Uint16> uInt16ListToArrayPointer(List<int> list) {
     final ptr = calloc<Uint16>(list.length);
-    for (var i = 0; i < list.length; i++) {
-      ptr.elementAt(i).value = list[i];
-    }
+    ptr.asTypedList(list.length).setAll(0, list);
     return ptr;
   }
   // void bufferSubData(int target, int offset, data);
@@ -1493,10 +1487,7 @@ class RenderingContext {
     Pointer<Int8>? nativeBuffer;
     if (pixels != null) {
       nativeBuffer = calloc<Int8>(pixels.lengthInBytes);
-      final dartData = pixels.buffer.asUint8List();
-      for (int i = 0; i < dartData.lengthInBytes; i++) {
-        nativeBuffer.elementAt(i).value = dartData[i];
-      }
+      nativeBuffer.asTypedList(pixels.lengthInBytes).setAll(0, pixels.buffer.asUint8List());
     }
     gl.glTexImage2D(target, level, internalformat, width, height, border, format, type,
         nativeBuffer != null ? nativeBuffer.cast() : nullptr);
