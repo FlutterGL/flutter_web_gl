@@ -13,11 +13,19 @@ A new flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
-  s.dependency 'Flutter'
-  s.platform = :ios, '8.0'
+  s.source_files = 'Classes/**/*.{h,m,swift,inc,plist}'
+  s.public_header_files = 'Classes/**/*.{h,inc}'
 
-  # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.dependency 'Flutter'
+
+  s.platform = :ios, '11.0'
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }  
   s.swift_version = '5.0'
+  
+  s.preserve_paths = 'MetalANGLE.framework'
+  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework MetalANGLE', 'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/MetalANGLE.framework/Headers"'}
+  s.vendored_frameworks = 'MetalANGLE.framework'
+  s.library = 'c++'
+
+
 end

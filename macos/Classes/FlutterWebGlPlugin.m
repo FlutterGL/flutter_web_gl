@@ -62,12 +62,12 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
         }
         
         CVPixelBufferLockBaseAddress(_pixelData, 0);
-        UInt32* buffer = (UInt32*)CVPixelBufferGetBaseAddress(_pixelData);
-        for ( unsigned long i = 0; i < width * height; i++ )
-        {
-            buffer[i] = CFSwapInt32HostToBig(0x00ff00ff);
-        }
-        CVPixelBufferUnlockBaseAddress(_pixelData, 0);
+        // UInt32* buffer = (UInt32*)CVPixelBufferGetBaseAddress(_pixelData);
+        // for ( unsigned long i = 0; i < width * height; i++ )
+        // {
+        //     buffer[i] = CFSwapInt32HostToBig(0x00ff00ff);
+        // }
+        // CVPixelBufferUnlockBaseAddress(_pixelData, 0);
 
         [self createMtlTextureFromCVPixBufferWithWidth:width andHeight:height];
         glGenFramebuffers(1, &_fbo);
