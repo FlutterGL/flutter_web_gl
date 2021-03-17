@@ -18,8 +18,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   final textures = <FlutterGLTexture>[];
   int textureId = 0;
-  static const textureWidth = 1920;
-  static const textureHeight = 1080;
+  static const textureWidth = 640;
+  static const textureHeight = 320;
   static const aspect = textureWidth / textureHeight;
 
   @override
