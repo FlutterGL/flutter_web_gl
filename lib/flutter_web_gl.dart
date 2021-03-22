@@ -59,6 +59,8 @@ class FlutterWebGL {
   static late Pointer<Void> _dummySurface;
   static int? _activeFramebuffer;
 
+  static Map<String, FlutterGLTexture> _textureCache = {};
+
   static LibOpenGLES get rawOpenGl {
     if (_libOpenGLES == null) {
       if (Platform.isMacOS || Platform.isIOS) {
@@ -244,8 +246,10 @@ class FlutterWebGL {
     print('\n');
   }
 
-  static Future<FlutterGLTexture> createTexture(int width, int height) async {
-    final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height});
+  static Future<FlutterGLTexture> createTexture(int width, int height, [String id = "__DEFAULT_TEXTURE_ID"]) async {
+    final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height, "id": id});
+
+    if (result['cached'] == 1 && _textureCache.containsKey(id)) return _textureCache[id]!;
 
     Pointer<Uint32> fbo = calloc();
     rawOpenGl.glGenFramebuffers(1, fbo);
@@ -283,6 +287,8 @@ class FlutterWebGL {
     _activeFramebuffer = fbo.value;
 
     calloc.free(fbo);
+
+    _textureCache[id] = newTexture;
     return newTexture;
   }
 

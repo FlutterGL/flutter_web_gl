@@ -210,7 +210,9 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     if ([call.method isEqualToString:@"initOpenGL"]) {
-        static EGLContext  context;
+        static EGLContext context;
+        static EGLSurface dummySurfaceForDartSide;
+        
         if (context != NULL)
         {
           // this means initOpenGL() was already called, which makes sense if you want to acess a Texture not only
@@ -218,7 +220,9 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
           // by `initOpenGL``in Dart created contexts will be linked to the one we got from the very first call to `initOpenGL`
           // we return this information so that the Dart side can dispose of one context.
 
-            result([NSNumber numberWithLong: (long)context]);
+            result(@{@"context" : [NSNumber numberWithLong: (long)context],
+                     @"dummySurface" : [NSNumber numberWithLong: (long)dummySurfaceForDartSide]
+                   });
           return;
           
         }
@@ -270,7 +274,7 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
         CALayer* dummyLayer2       = [[CALayer alloc] init];
         dummyLayer2.frame = CGRectMake(0, 0, 1, 1);
 
-        EGLSurface dummySurfaceForDartSide = eglCreateWindowSurface(display, config,(__bridge EGLNativeWindowType)dummyLayer, NULL);
+        dummySurfaceForDartSide = eglCreateWindowSurface(display, config,(__bridge EGLNativeWindowType)dummyLayer, NULL);
         EGLSurface dummySurface = eglCreateWindowSurface(display,
             config,(__bridge EGLNativeWindowType)dummyLayer2, NULL);
         
@@ -313,12 +317,22 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
                  @"dummySurface" : [NSNumber numberWithLong: (long)dummySurfaceForDartSide]
                });
         return;
-        
+
     }
     if ([call.method isEqualToString:@"createTexture"]) {
+        static NSMutableDictionary *textureCache = nil;
+
         NSNumber* width;
         NSNumber* height;
+        NSString* id;
         if (call.arguments) {
+            id = call.arguments[@"id"];
+
+            if ([textureCache objectForKey:id]) {
+                NSDictionary* createTextureResult = textureCache[id];
+                return result(createTextureResult);
+            }
+
             width = call.arguments[@"width"];
             if (width == NULL)
             {
@@ -352,11 +366,24 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
         }
 
 //        flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
-        result(@{
-           @"textureId" : [NSNumber numberWithLongLong: [_flutterGLTexture flutterTextureId]],
-           @"rbo": [NSNumber numberWithLongLong: [_flutterGLTexture  rbo]],
-           @"metalAsGLTexture": [NSNumber numberWithLongLong: [_flutterGLTexture  metalAsGLTexture]]
-        });
+
+        NSDictionary* createTextureResult = @{
+            @"textureId" : [NSNumber numberWithLongLong: [_flutterGLTexture flutterTextureId]],
+            @"rbo": [NSNumber numberWithLongLong: [_flutterGLTexture  rbo]],
+            @"metalAsGLTexture": [NSNumber numberWithLongLong: [_flutterGLTexture metalAsGLTexture]],
+            @"cached": [NSNumber numberWithInt: 0],
+        };
+
+        result(createTextureResult);
+
+        NSMutableDictionary *cachedVal = [NSMutableDictionary dictionaryWithDictionary:createTextureResult];
+        [cachedVal setObject:[NSNumber numberWithInt:1] forKey:@"cached"];
+
+        if (textureCache == nil) {
+            textureCache = [NSMutableDictionary dictionaryWithDictionary:@{ id: cachedVal }];
+        } else {
+            [textureCache setValue:cachedVal forKey:id];
+        }
 
         return;
     }
