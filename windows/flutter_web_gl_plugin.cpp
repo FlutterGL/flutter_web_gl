@@ -220,6 +220,8 @@ void FlutterWebGlPlugin::HandleMethodCall(
       std::cerr << "EGL version in native plugin" << major << "." << minor << std::endl;
       
       const EGLint attribute_list[] = {
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_ES3_BIT,
         EGL_RED_SIZE, 8,
         EGL_GREEN_SIZE, 8,
         EGL_BLUE_SIZE, 8,
@@ -241,6 +243,14 @@ void FlutterWebGlPlugin::HandleMethodCall(
         EGL_HEIGHT, 16,
         EGL_NONE
       };
+
+      const EGLint contextAttributes[] ={
+        EGL_CONTEXT_CLIENT_VERSION,
+        3,
+        EGL_NONE
+      };
+      context = eglCreateContext(display,config,EGL_NO_CONTEXT,contextAttributes);
+
 
       // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
       auto dummySurface = eglCreatePbufferSurface(display, config, surfaceAttributes);

@@ -124,6 +124,8 @@ class FlutterWebGL {
     //   printConfigAttributes(_display, existingConfigs[i]);
     // }
 
+    printConfigAttributes(_display, _config);
+
     // _pluginContext = eglCreateContext(
     // _display,
     // _config,

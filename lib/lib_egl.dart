@@ -18,7 +18,8 @@ Pointer<Void> eglGetDisplay([Pointer<Void>? displayId]) {
   final nativeCallResult = _libEGL!.eglGetDisplay(displayId ?? nullptr);
 
   if (nativeCallResult == nullptr) {
-    throw EglException('No display matching display ID [$displayId] was found.');
+    throw EglException(
+        'No display matching display ID [$displayId] was found.');
   }
 
   return nativeCallResult;
@@ -37,7 +38,8 @@ void loadEGL() {
 EglInitializeResult eglInitialize(Pointer<Void> display) {
   final major = calloc<Int32>();
   final minor = calloc<Int32>();
-  final nativeCallSucceeded = _libEGL!.eglInitialize(display, major, minor) == 1;
+  final nativeCallSucceeded =
+      _libEGL!.eglInitialize(display, major, minor) == 1;
   EglInitializeResult result;
 
   if (nativeCallSucceeded) {
@@ -106,7 +108,8 @@ List<Pointer<Void>> eglChooseConfig(
   return result;
 }
 
-List<Pointer<Void>> eglGetConfigs(Pointer<Void> display, {int maxConfigs = 10}) {
+List<Pointer<Void>> eglGetConfigs(Pointer<Void> display,
+    {int maxConfigs = 10}) {
   final configs = calloc<IntPtr>(maxConfigs);
   final numConfigs = calloc<Int32>();
   final nativeCallSucceeded = _libEGL!.eglGetConfigs(
@@ -128,13 +131,15 @@ List<Pointer<Void>> eglGetConfigs(Pointer<Void> display, {int maxConfigs = 10}) 
   calloc.free(numConfigs);
 
   if (!nativeCallSucceeded) {
-    throw EglException('Failed to get configs for display [$display], max configs $maxConfigs.');
+    throw EglException(
+        'Failed to get configs for display [$display], max configs $maxConfigs.');
   }
 
   return result;
 }
 
-int eglGetConfigAttrib(Pointer<Void> display, Pointer<Void> config, EglConfigAttribute attribute) {
+int eglGetConfigAttrib(
+    Pointer<Void> display, Pointer<Void> config, EglConfigAttribute attribute) {
   final value = calloc<Int32>();
   final nativeCallSucceeded = _libEGL!.eglGetConfigAttrib(
         display,
@@ -151,7 +156,8 @@ int eglGetConfigAttrib(Pointer<Void> display, Pointer<Void> config, EglConfigAtt
   calloc.free(value);
 
   if (!nativeCallSucceeded) {
-    throw EglException('Failed to get configs attribute for display [$display], attribute:  ${attribute.toString()}.');
+    throw EglException(
+        'Failed to get configs attribute for display [$display], attribute:  ${attribute.toString()}.');
   }
 
   return result;
@@ -182,7 +188,8 @@ void printConfigAttributes(Pointer<Void> display, Pointer<Void> config) {
       '${EglConfigAttribute.depthSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.depthSize)}');
   print(
       '${EglConfigAttribute.greenSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.greenSize)}');
-  print('${EglConfigAttribute.level.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.level)}');
+  print(
+      '${EglConfigAttribute.level.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.level)}');
   print(
       '${EglConfigAttribute.luminanceSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.luminanceSize)}');
   print(
@@ -193,16 +200,19 @@ void printConfigAttributes(Pointer<Void> display, Pointer<Void> config) {
       '${EglConfigAttribute.maxSwapInterval.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.maxSwapInterval)}');
   print(
       '${EglConfigAttribute.minSwapInterval.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.minSwapInterval)}');
-  print('${EglConfigAttribute.redSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.redSize)}');
+  print(
+      '${EglConfigAttribute.redSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.redSize)}');
   print(
       '${EglConfigAttribute.sampleBuffers.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.sampleBuffers)}');
-  print('${EglConfigAttribute.samples.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.samples)}');
+  print(
+      '${EglConfigAttribute.samples.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.samples)}');
   print(
       '${EglConfigAttribute.stencilSize.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.stencilSize)}');
   print(
       '${EglConfigAttribute.renderableType.toString()}: ${eglGetConfigAttrib(display, config, EglConfigAttribute.renderableType)}');
 
-  final surfaceType = eglGetConfigAttrib(display, config, EglConfigAttribute.surfaceType);
+  final surfaceType =
+      eglGetConfigAttrib(display, config, EglConfigAttribute.surfaceType);
 
   print(
       'SurfaceType: ${(surfaceType & EGL_MULTISAMPLE_RESOLVE_BOX_BIT) != 0 ? 'EGL_MULTISAMPLE_RESOLVE_BOX_BIT, ' : ''}'
@@ -232,7 +242,7 @@ Pointer<Void> eglCreateContext(
   final attributeList = calloc<Int32>(5);
   attributeList[0] = EGL_CONTEXT_CLIENT_VERSION;
   attributeList[1] = contextClientVersion;
-  if (isDebugContext) {
+  if (!isDebugContext) {
     attributeList[2] = EglValue.none.toIntValue();
   } else {
     attributeList[2] = EGL_CONTEXT_OPENGL_DEBUG;
@@ -240,7 +250,8 @@ Pointer<Void> eglCreateContext(
     attributeList[4] = EglValue.none.toIntValue();
   }
 
-  final nativeCallResult = _libEGL!.eglCreateContext(display, config, shareContext ?? nullptr, attributeList);
+  final nativeCallResult = _libEGL!.eglCreateContext(
+      display, config, shareContext ?? nullptr, attributeList);
   late Pointer<Void> result;
 
   if (nativeCallResult != nullptr) {
@@ -262,7 +273,8 @@ Pointer<Void> eglCreateWindowSurface(
   Pointer<Void> config,
   Pointer<Void> nativeWindow,
 ) {
-  final nativeCallResult = _libEGL!.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
+  final nativeCallResult =
+      _libEGL!.eglCreateWindowSurface(display, config, nativeWindow, nullptr);
 
   if (nativeCallResult == nullptr) {
     throw EglException(
@@ -292,7 +304,8 @@ Pointer<Void> eglCreatePbufferSurface(
   // The list must be terminated with EGL_NONE.
   attributeList[attributeCount - 1] = EglValue.none.toIntValue();
 
-  final nativeCallResult = _libEGL!.eglCreatePbufferSurface(display, config, attributeList);
+  final nativeCallResult =
+      _libEGL!.eglCreatePbufferSurface(display, config, attributeList);
 
   calloc.free(attributeList);
   if (nativeCallResult == nullptr) {
@@ -309,7 +322,8 @@ void eglMakeCurrent(
   Pointer<Void> read,
   Pointer<Void> context,
 ) {
-  final nativeCallResult = _libEGL!.eglMakeCurrent(display, draw, read, context) == 1;
+  final nativeCallResult =
+      _libEGL!.eglMakeCurrent(display, draw, read, context) == 1;
 
   if (nativeCallResult) {
     return;
@@ -329,7 +343,8 @@ void eglSwapBuffers(
     return;
   }
 
-  throw EglException('Failed to swap buffers using display [$display], surface [$surface].');
+  throw EglException(
+      'Failed to swap buffers using display [$display], surface [$surface].');
 }
 
 void eglDestroyContext(
@@ -342,7 +357,8 @@ void eglDestroyContext(
     return;
   }
 
-  throw EglException('Failed to destroy context [$display], surface [$context].');
+  throw EglException(
+      'Failed to destroy context [$display], surface [$context].');
 }
 
 //
@@ -358,7 +374,8 @@ class EglException implements Exception {
   bool get hasEglError => eglError != EglError.success;
 
   @override
-  String toString() => '$message${hasEglError ? ' EGL error $eglError (${eglError.toIntValue()})' : ''}';
+  String toString() =>
+      '$message${hasEglError ? ' EGL error $eglError (${eglError.toIntValue()})' : ''}';
 }
 
 class EglInitializeResult {
