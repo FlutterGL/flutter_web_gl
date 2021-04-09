@@ -33,7 +33,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     await FlutterWebGL.initOpenGL(true);
 
     try {
-      textures.add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
+      textures
+          .add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
     } on PlatformException catch (ex) {
       print("failed to get texture id");
       return;

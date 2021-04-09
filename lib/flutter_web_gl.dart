@@ -28,7 +28,7 @@ class FlutterGLTexture {
   static FlutterGLTexture fromMap(
       dynamic map, int fboId, int width, int height) {
     return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int,
-        map['metalAsGLTexture'] as int, fboId, width, height);
+        map['metalAsGLTexture'] as int? ?? 0, fboId, width, height);
   }
 
   Map<String, int> toMap() {
@@ -123,6 +123,8 @@ class FlutterWebGL {
     //   print('\nConfig No: $i');
     //   printConfigAttributes(_display, existingConfigs[i]);
     // }
+
+    printConfigAttributes(_display, _config);
 
     // _pluginContext = eglCreateContext(
     // _display,
