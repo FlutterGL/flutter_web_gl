@@ -207,22 +207,6 @@ void FlutterWebGlPlugin::HandleMethodCall(
         return;
       }
 
-      // Obtain the OpenGL context that was created on the Dart side
-      // it is linked to the context that is used by the Dart side for all further OpenGL operations over FFI
-      // Because of that they are shared (linked) they have both access to the same RenderbufferObjects (RBO) which allows
-      // The Dart main thread to render into an Texture RBO which can then accessed from this thread and passed to the Flutter Engine
-      if (arguments) {
-          auto texture_id = arguments->find(EncodableValue("openGLContext"));
-          if (texture_id != arguments->end()) {
-              context = (EGLContext) std::get<std::int64_t>(texture_id->second);
-          }
-      }
-      else
-      {
-        result->Error("No OpenGL context","No OpenGL context received by the native part of FlutterGL.iniOpenGL");
-        return;
-      }
-
       auto display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
       EGLint major;
       EGLint minor;

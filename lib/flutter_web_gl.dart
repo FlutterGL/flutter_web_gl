@@ -124,32 +124,22 @@ class FlutterWebGL {
     //   printConfigAttributes(_display, existingConfigs[i]);
     // }
 
-    _pluginContext = eglCreateContext(
-      _display,
-      _config,
-      contextClientVersion: 3,
-    );
+    // _pluginContext = eglCreateContext(
+    // _display,
+    // _config,
+    // contextClientVersion: 3,
+    // );
 
-    final result = await _channel
-        .invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
+    final result = await _channel.invokeMethod('initOpenGL');
     if (result == null) {
       throw EglException(
           'Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
     }
 
-    final pluginContextAdress = result['context'] as int?;
-    if (pluginContextAdress == null) {
+    final _plugIncontext = result['context'] as int?;
+    if (_plugIncontext == null) {
       throw EglException(
           'Plugin.initOpenGL didn\'t return a Context. Something is really wrong!');
-    }
-
-    final returnedPluginContext =
-        Pointer<Void>.fromAddress(pluginContextAdress);
-    if (returnedPluginContext != _pluginContext) {
-      // this can only be the case if this method is called from another thread than the
-      // Dart main Thread, like from an isolate. In this case the plugin has already a context
-      // so we don't need this one anymore.
-      eglDestroyContext(_display, _pluginContext);
     }
 
     final dummySurfacePointer = result['dummySurface'] as int?;
@@ -162,7 +152,7 @@ class FlutterWebGL {
     _baseAppContext = eglCreateContext(_display, _config,
 
         /// we link both contexts so that app and plugin can share OpenGL Objects
-        shareContext: returnedPluginContext,
+        shareContext: _pluginContext,
         contextClientVersion: 3,
         isDebugContext: debug);
 
