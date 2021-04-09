@@ -22,14 +22,21 @@ class FlutterGLTexture {
   final int fboId;
   final int width;
   final int height;
-  FlutterGLTexture(this.textureId, this.rboId, this.metalAsGLTextureId, this.fboId, this.width, this.height);
+  FlutterGLTexture(this.textureId, this.rboId, this.metalAsGLTextureId,
+      this.fboId, this.width, this.height);
 
-  static FlutterGLTexture fromMap(dynamic map, int fboId, int width, int height) {
-    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int, map['metalAsGLTexture'] as int, fboId, width, height);
+  static FlutterGLTexture fromMap(
+      dynamic map, int fboId, int width, int height) {
+    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int,
+        map['metalAsGLTexture'] as int, fboId, width, height);
   }
 
   Map<String, int> toMap() {
-    return {'textureId': textureId, 'rbo': rboId, 'metalAsGLTexture': metalAsGLTextureId };
+    return {
+      'textureId': textureId,
+      'rbo': rboId,
+      'metalAsGLTexture': metalAsGLTextureId
+    };
   }
 
   /// Whenever you finished your rendering you have to call this function to signal
@@ -64,15 +71,18 @@ class FlutterWebGL {
       if (Platform.isMacOS || Platform.isIOS) {
         _libOpenGLES = LibOpenGLES(DynamicLibrary.process());
       } else {
-        _libOpenGLES = LibOpenGLES(DynamicLibrary.open(resolveDylibPath('libGLESv2')));
+        _libOpenGLES =
+            LibOpenGLES(DynamicLibrary.open(resolveDylibPath('libGLESv2')));
       }
     }
     return _libOpenGLES!;
   }
 
   static RenderingContext getWebGLContext() {
-    assert(_baseAppContext != nullptr, "OpenGL isn't initialized! Please call FlutterWebGL.initOpenGL");
-    return RenderingContext._create(rawOpenGl, FlutterWebGL._baseAppContext.address);
+    assert(_baseAppContext != nullptr,
+        "OpenGL isn't initialized! Please call FlutterWebGL.initOpenGL");
+    return RenderingContext._create(
+        rawOpenGl, FlutterWebGL._baseAppContext.address);
   }
 
   static Future<String> get platformVersion async {
@@ -114,40 +124,35 @@ class FlutterWebGL {
     //   printConfigAttributes(_display, existingConfigs[i]);
     // }
 
-    _pluginContext = eglCreateContext(
-      _display,
-      _config,
-      contextClientVersion: 3,
-    );
+    // _pluginContext = eglCreateContext(
+    // _display,
+    // _config,
+    // contextClientVersion: 3,
+    // );
 
-    final result = await _channel.invokeMethod('initOpenGL', {'openGLContext': _pluginContext.address});
+    final result = await _channel.invokeMethod('initOpenGL');
     if (result == null) {
-      throw EglException('Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
+      throw EglException(
+          'Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
     }
 
-    final pluginContextAdress = result['context'] as int?;
-    if (pluginContextAdress == null) {
-      throw EglException('Plugin.initOpenGL didn\'t return a Context. Something is really wrong!');
-    }
-
-    final returnedPluginContext = Pointer<Void>.fromAddress(pluginContextAdress);
-    if (returnedPluginContext != _pluginContext) {
-      // this can only be the case if this method is called from another thread than the
-      // Dart main Thread, like from an isolate. In this case the plugin has already a context
-      // so we don't need this one anymore.
-      eglDestroyContext(_display, _pluginContext);
+    final _plugIncontext = result['context'] as int?;
+    if (_plugIncontext == null) {
+      throw EglException(
+          'Plugin.initOpenGL didn\'t return a Context. Something is really wrong!');
     }
 
     final dummySurfacePointer = result['dummySurface'] as int?;
     if (dummySurfacePointer == null) {
-      throw EglException('Plugin.initOpenGL didn\'t return a dummy surface. Something is really wrong!');
+      throw EglException(
+          'Plugin.initOpenGL didn\'t return a dummy surface. Something is really wrong!');
     }
     _dummySurface = Pointer<Void>.fromAddress(dummySurfacePointer);
 
     _baseAppContext = eglCreateContext(_display, _config,
 
         /// we link both contexts so that app and plugin can share OpenGL Objects
-        shareContext: returnedPluginContext,
+        shareContext: _pluginContext,
         contextClientVersion: 3,
         isDebugContext: debug);
 
@@ -163,13 +168,15 @@ class FlutterWebGL {
     if (debug && Platform.isWindows) {
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT);
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-      rawOpenGl.glDebugMessageCallback(Pointer.fromFunction<GLDEBUGPROC>(glDebugOutput), nullptr);
-      rawOpenGl.glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+      rawOpenGl.glDebugMessageCallback(
+          Pointer.fromFunction<GLDEBUGPROC>(glDebugOutput), nullptr);
+      rawOpenGl.glDebugMessageControl(
+          GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
     }
   }
 
-  static void glDebugOutput(
-      int source, int type, int id, int severity, int length, Pointer<Int8> pMessage, Pointer<Void> pUserParam) {
+  static void glDebugOutput(int source, int type, int id, int severity,
+      int length, Pointer<Int8> pMessage, Pointer<Void> pUserParam) {
     final message = pMessage.cast<Utf8>().toDartString();
     // ignore non-significant error/warning codes
     // if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
@@ -245,24 +252,27 @@ class FlutterWebGL {
   }
 
   static Future<FlutterGLTexture> createTexture(int width, int height) async {
-    final result = await _channel.invokeMethod('createTexture', {"width": width, "height": height});
+    final result = await _channel
+        .invokeMethod('createTexture', {"width": width, "height": height});
 
     Pointer<Uint32> fbo = calloc();
     rawOpenGl.glGenFramebuffers(1, fbo);
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, fbo.value);
 
-    final newTexture = FlutterGLTexture.fromMap(result, fbo.value, width, height);
+    final newTexture =
+        FlutterGLTexture.fromMap(result, fbo.value, width, height);
 
     print(rawOpenGl.glGetError());
 
     if (newTexture.metalAsGLTextureId != 0) {
       // Draw to metal interop texture directly
       rawOpenGl.glBindTexture(GL_TEXTURE_2D, newTexture.metalAsGLTextureId);
-      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexture.metalAsGLTextureId, 0);
-    }
-    else {
+      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+          GL_TEXTURE_2D, newTexture.metalAsGLTextureId, 0);
+    } else {
       rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, newTexture.rboId);
-      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, newTexture.rboId);
+      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+          GL_RENDERBUFFER, newTexture.rboId);
     }
     var frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
@@ -272,9 +282,11 @@ class FlutterWebGL {
     Pointer<Int32> depthBuffer = calloc();
     rawOpenGl.glGenRenderbuffers(1, depthBuffer.cast());
     rawOpenGl.glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.value);
-    rawOpenGl.glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+    rawOpenGl.glRenderbufferStorage(
+        GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
 
-    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer.value);
+    rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+        GL_RENDERBUFFER, depthBuffer.value);
     frameBufferCheck = rawOpenGl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (frameBufferCheck != GL_FRAMEBUFFER_COMPLETE) {
       print("Framebuffer (depth) check failed: $frameBufferCheck");
@@ -289,31 +301,37 @@ class FlutterWebGL {
   static Future<void> updateTexture(FlutterGLTexture texture) async {
     rawOpenGl.glFlush();
 
-    assert(_activeFramebuffer != null, 'There is no active FlutterGL Texture to update');
-    await _channel.invokeMethod('updateTexture', {"textureId": texture.textureId});
+    assert(_activeFramebuffer != null,
+        'There is no active FlutterGL Texture to update');
+    await _channel
+        .invokeMethod('updateTexture', {"textureId": texture.textureId});
   }
 
   static Future<void> deleteTexture(FlutterGLTexture texture) async {
-    assert(_activeFramebuffer != null, 'There is no active FlutterGL Texture to delete');
+    assert(_activeFramebuffer != null,
+        'There is no active FlutterGL Texture to delete');
     if (_activeFramebuffer == texture.fboId) {
-      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, 0);
+      rawOpenGl.glFramebufferRenderbuffer(
+          GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, 0);
 
       Pointer<Uint32> fbo = calloc();
       fbo.value = texture.fboId;
       rawOpenGl.glDeleteBuffers(1, fbo);
       calloc.free(fbo);
     }
-    await _channel.invokeMethod('deleteTexture', {"textureId": texture.textureId});
+    await _channel
+        .invokeMethod('deleteTexture', {"textureId": texture.textureId});
   }
 
   static void activateTexture(FlutterGLTexture texture) {
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, texture.fboId);
     if (texture.metalAsGLTextureId != 0) {
       // Draw to metal interop texture directly
-      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.metalAsGLTextureId, 0);
-    }
-    else {
-      rawOpenGl.glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, texture.rboId);
+      rawOpenGl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+          GL_TEXTURE_2D, texture.metalAsGLTextureId, 0);
+    } else {
+      rawOpenGl.glFramebufferRenderbuffer(
+          GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, texture.rboId);
     }
     printOpenGLError('activateTextue ${texture.textureId}');
     _activeFramebuffer = texture.fboId;
