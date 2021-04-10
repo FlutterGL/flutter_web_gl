@@ -124,25 +124,27 @@ class FlutterWebGL {
     //   printConfigAttributes(_display, existingConfigs[i]);
     // }
 
-    printConfigAttributes(_display, _config);
-
     // _pluginContext = eglCreateContext(
-    // _display,
-    // _config,
-    // contextClientVersion: 3,
+    //   _display,
+    //   _config,
+    //   contextClientVersion: 3,
     // );
 
-    final result = await _channel.invokeMethod('initOpenGL');
+    final result = await _channel.invokeMethod(
+      'initOpenGL',
+    );
     if (result == null) {
       throw EglException(
           'Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
     }
 
-    final _plugIncontext = result['context'] as int?;
-    if (_plugIncontext == null) {
+    final pluginContextAdress = result['context'] as int?;
+    if (pluginContextAdress == null) {
       throw EglException(
           'Plugin.initOpenGL didn\'t return a Context. Something is really wrong!');
     }
+
+    _pluginContext = Pointer<Void>.fromAddress(pluginContextAdress);
 
     final dummySurfacePointer = result['dummySurface'] as int?;
     if (dummySurfacePointer == null) {
