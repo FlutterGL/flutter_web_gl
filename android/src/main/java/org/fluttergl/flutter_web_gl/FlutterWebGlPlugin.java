@@ -9,7 +9,6 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-import javax.microedition.khronos.egl.EGL10;
 
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
@@ -36,13 +35,19 @@ import static android.opengl.EGL14.EGL_GREEN_SIZE;
 import static android.opengl.EGL14.EGL_HEIGHT;
 import static android.opengl.EGL14.EGL_NONE;
 import static android.opengl.EGL14.EGL_NO_CONTEXT;
+import static android.opengl.EGL14.EGL_NO_SURFACE;
 import static android.opengl.EGL14.EGL_RED_SIZE;
+import static android.opengl.EGL14.EGL_RENDERABLE_TYPE;
 import static android.opengl.EGL14.EGL_WIDTH;
 import static android.opengl.EGL14.eglCreateWindowSurface;
+import static android.opengl.EGL14.eglMakeCurrent;
+import static android.opengl.EGL15.EGL_OPENGL_ES3_BIT;
+import static android.opengl.EGLExt.EGL_OPENGL_ES3_BIT_KHR;
+import static android.opengl.GLES20.GL_NO_ERROR;
 import static android.opengl.GLES20.GL_RENDERER;
 import static android.opengl.GLES20.GL_VENDOR;
+import static android.opengl.GLES20.GL_VERSION;
 import static android.opengl.GLES20.glGetError;
-import static javax.microedition.khronos.opengles.GL10.GL_NO_ERROR;
 
 class OpenGLException extends Throwable {
 
@@ -127,21 +132,6 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
         return;
       }
 
-      // Obtain the OpenGL context that was created on the Dart side
-      // it is linked to the context that is used by the Dart side for all further OpenGL operations over FFI
-      // Because of that they are shared (linked) they have both access to the same RenderbufferObjects (RBO) which allows
-      // The Dart main thread to render into an Texture RBO which can then accessed from this thread and passed to the Flutter Engine
-     /* if (!arguments.isEmpty()) {
-        long contextId = (long) arguments.get("openGLContext");
-        context = (EGLContext) new MyEGLContext(contextId);
-        EGL14.eglCreateContext()
-      }
-      else
-      {
-        result.error("No OpenGL context","No OpenGL context received by the native part of FlutterGL.iniOpenGL",null);
-        return;
-      }
-*/
       EGLDisplay display = EGL14.eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
       int[] version = new int[2];
@@ -154,6 +144,8 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
       Log.i("FlutterWegGL", "EGL version in native plugin " + version[0] + "." + version[1]);
 
       int[] attribute_list = new int[]{
+              EGL_RENDERABLE_TYPE,
+              EGL_OPENGL_ES3_BIT_KHR,
               EGL_RED_SIZE, 8,
               EGL_GREEN_SIZE, 8,
               EGL_BLUE_SIZE, 8,
@@ -183,11 +175,27 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
 
 
       if (context == null) {
-        int[] attribList = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL10.EGL_NONE};
+        int[] attribList = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE};
         context = EGL14.eglCreateContext(display, config, EGL_NO_CONTEXT, attribute_list, 0);
       }
       /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
       /// from Dart Isolates.
+
+      eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
+
+      String v = GLES30.glGetString(GL_VENDOR);
+      int error = glGetError();
+      if (error != GL_NO_ERROR)
+      {
+
+        Log.i("FlutterWegGL", "GLError: " + error);
+      }
+      String r = GLES30.glGetString(GL_RENDERER);
+      String v2 = GLES30.glGetString(GL_VERSION);
+
+
+      Log.i("FlutterWegGL", "OpenGL initialized: Vendor:" + v + " renderer: " + r + " Version: " + v2);
+
       Map<String, Object> response = new HashMap<>();
       response.put("context", context.getNativeHandle());
       response.put("dummySurface", dummySurfaceForDartSide.getNativeHandle());
@@ -208,18 +216,19 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
 
       FlutterGLTexture flutterGLTexture;
 
-      try
+      flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
+/*      try
       {
         flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
       }
       catch (OpenGLException ex)
       {
         result.error(ex.message + " : " + ex.error,null,null);
+        return;
       }
-
+*/
       //flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
 
-      EGLSurface surface = eglCreateWindowSurface()
 
       Map<String, Object> response = new HashMap<>();
       response.put("textureId", flutterGLTexture.surfaceTextureEntry.id());
