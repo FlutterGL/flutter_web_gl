@@ -30,7 +30,11 @@ void loadEGL() {
     if (Platform.isMacOS || Platform.isIOS) {
       _libEGL = LibEGL(DynamicLibrary.process());
     } else {
-      _libEGL = LibEGL(DynamicLibrary.open(resolveDylibPath('libEGL')));
+      if (Platform.isAndroid) {
+        _libEGL = LibEGL(DynamicLibrary.open('libEGL.so'));
+      } else {
+        _libEGL = LibEGL(DynamicLibrary.open(resolveDylibPath('libEGL')));
+      }
     }
   }
 }
