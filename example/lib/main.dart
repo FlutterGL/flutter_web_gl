@@ -67,7 +67,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   int iterationCount = 60;
   int framesOver = 0;
   void updateTexture(_) async {
-    if (textureId == 0) return;
+    // if (textureId == 0) return;
     if (!updating) {
       updating = true;
       stopwatch.reset();

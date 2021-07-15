@@ -1,3 +1,4 @@
+
 package org.fluttergl.flutter_web_gl;
 
 import androidx.annotation.NonNull;
@@ -13,7 +14,9 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
+import android.opengl.EGL15;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
@@ -42,6 +45,7 @@ import static android.opengl.EGL14.EGL_WIDTH;
 import static android.opengl.EGL14.eglCreateWindowSurface;
 import static android.opengl.EGL14.eglMakeCurrent;
 import static android.opengl.EGL15.EGL_OPENGL_ES3_BIT;
+import static android.opengl.EGL15.EGL_PLATFORM_ANDROID_KHR;
 import static android.opengl.EGLExt.EGL_OPENGL_ES3_BIT_KHR;
 import static android.opengl.GLES20.GL_NO_ERROR;
 import static android.opengl.GLES20.GL_RENDERER;
@@ -96,6 +100,28 @@ class FlutterGLTexture
   TextureRegistry.SurfaceTextureEntry surfaceTextureEntry;
 };
 
+
+class GLThread extends Thread
+{
+
+  @Override
+  public void run() {
+    super.run();
+    EGLDisplay display = EGL14.eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+    int[] version = new int[2];
+    boolean initializeResult = EGL14.eglInitialize(display, version, 0, version, 1);
+    if (!initializeResult) {
+      Log.i("EGL InitError", "eglInit failed", null);
+      return;
+    }
+
+    Log.i("FlutterWegGL", "EGL version in native plugin " + version[0] + "." + version[1]);
+
+  }
+}
+
+
 /** FlutterWebGlPlugin */
 public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
   /// The MethodChannel that will the communication between Flutter and native Android
@@ -105,6 +131,8 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private EGLContext context=null;
   private TextureRegistry textureRegistry;
+  private OpenGLManager openGLManager;
+  private TextureRegistry.SurfaceTextureEntry surfaceTextureEntry;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -123,25 +151,22 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
     }
       else if (call.method.equals("initOpenGL")) {
       if (context != null) {
-        // this means initOpenGL() was already called, which makes sense if you want to acess a Texture not only
+        // TODO this isn't fully handled on the dart side yet
+        // this means initOpenGL() was already called, which makes sense if you want to access a Texture not only
         // from the main thread but also from an isolate. On the plugin layer here that doesn't bother because all
         // by `initOpenGL``in Dart created contexts will be linked to the one we got from the very first call to `initOpenGL`
         // we return this information so that the Dart side can dispose of one context.
-        result.success(context.getNativeHandle());
+        long handle = context.getNativeHandle();
+                result.success(handle);
 
         return;
       }
+      openGLManager = new OpenGLManager();
 
-      EGLDisplay display = EGL14.eglGetDisplay(EGL_DEFAULT_DISPLAY);
+      surfaceTextureEntry = textureRegistry.createSurfaceTexture();
+      SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
 
-      int[] version = new int[2];
-      boolean initializeResult = EGL14.eglInitialize(display, version, 0, version, 1);
-      if (!initializeResult) {
-        result.error("EGL InitError", "eglInit failed", null);
-        return;
-      }
-
-      Log.i("FlutterWegGL", "EGL version in native plugin " + version[0] + "." + version[1]);
+      surfaceTexture.setDefaultBufferSize(640,320);
 
       int[] attribute_list = new int[]{
               EGL_RENDERABLE_TYPE,
@@ -153,52 +178,20 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
               EGL_DEPTH_SIZE, 16,
               EGL_NONE};
 
-      int[] configsCount = new int[1];
-      EGLConfig[] configs = new EGLConfig[1];
-      EGLConfig config;
-      boolean chooseConfigResult = EGL14.eglChooseConfig(display, attribute_list, 0, configs, 0, 1, configsCount, 0);
-      if (!chooseConfigResult) {
-        result.error("EGL InitError", "eglChooseConfig failed", null);
+      if(!openGLManager.initGL())
+      {
+        result.error("OpenGL Init Error",openGLManager.getError(),null);
         return;
       }
-
-      config = configs[0];
-
-      int[] surfaceAttributes = new int[]{
-              EGL_WIDTH, 16,
-              EGL_HEIGHT, 16,
-              EGL_NONE
-      };
-
-      // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
-      EGLSurface dummySurfaceForDartSide = EGL14.eglCreatePbufferSurface(display, config, surfaceAttributes, 0);
+      context = openGLManager.getEGLContext();
+      long surface = openGLManager.createSurfaceFromTexture(surfaceTexture);
 
 
-      if (context == null) {
-        int[] attribList = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE};
-        context = EGL14.eglCreateContext(display, config, EGL_NO_CONTEXT, attribute_list, 0);
-      }
-      /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
-      /// from Dart Isolates.
-
-      eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
-
-      String v = GLES30.glGetString(GL_VENDOR);
-      int error = glGetError();
-      if (error != GL_NO_ERROR)
-      {
-
-        Log.i("FlutterWegGL", "GLError: " + error);
-      }
-      String r = GLES30.glGetString(GL_RENDERER);
-      String v2 = GLES30.glGetString(GL_VERSION);
-
-
-      Log.i("FlutterWegGL", "OpenGL initialized: Vendor:" + v + " renderer: " + r + " Version: " + v2);
-
+      long display = EGL14.eglGetCurrentDisplay().getNativeHandle();
       Map<String, Object> response = new HashMap<>();
       response.put("context", context.getNativeHandle());
-      response.put("dummySurface", dummySurfaceForDartSide.getNativeHandle());
+      response.put("dummySurface",surface );
+      response.put("eglConfigId",openGLManager.getConfigId());
       result.success(response);
     }
       else if (call.method.equals("createTexture")){
@@ -213,11 +206,11 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
           result.error("no texture height","no texture height",null);
           return;
         }
-
+/*
       FlutterGLTexture flutterGLTexture;
 
       flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
-/*      try
+      try
       {
         flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
       }
@@ -226,13 +219,15 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
         result.error(ex.message + " : " + ex.error,null,null);
         return;
       }
-*/
       //flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
 
 
+*/
       Map<String, Object> response = new HashMap<>();
-      response.put("textureId", flutterGLTexture.surfaceTextureEntry.id());
-      response.put("rbo", flutterGLTexture.rbo);
+      response.put("textureId", surfaceTextureEntry.id());
+      response.put("rbo", 0);
+//      response.put("textureId", flutterGLTexture.surfaceTextureEntry.id());
+//      response.put("rbo", flutterGLTexture.rbo);
       result.success(response);
 
       Log.i("FlutterWebGL","Created a new texture " + width + "x" + height);

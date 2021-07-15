@@ -4,4 +4,5 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 </manifest>

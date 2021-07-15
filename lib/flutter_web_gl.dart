@@ -70,6 +70,9 @@ class FlutterWebGL {
     if (_libOpenGLES == null) {
       if (Platform.isMacOS || Platform.isIOS) {
         _libOpenGLES = LibOpenGLES(DynamicLibrary.process());
+      }
+      if (Platform.isAndroid) {
+        _libOpenGLES = LibOpenGLES(DynamicLibrary.open('libGLESv3.so'));
       } else {
         _libOpenGLES =
             LibOpenGLES(DynamicLibrary.open(resolveDylibPath('libGLESv2')));
@@ -97,6 +100,7 @@ class FlutterWebGL {
     }
     loadEGL();
     _display = eglGetDisplay();
+    int displayId = _display.address;
     final initializeResult = eglInitialize(_display);
 
     debugPrint('EGL version: $initializeResult');
@@ -105,6 +109,7 @@ class FlutterWebGL {
       _display,
       attributes: {
         EglConfigAttribute.renderableType: EglValue.openglEs3Bit.toIntValue(),
+        // EglConfigAttribute.surfaceType: EGL_WINDOW_BIT,
         EglConfigAttribute.redSize: 8,
         EglConfigAttribute.greenSize: 8,
         EglConfigAttribute.blueSize: 8,
@@ -116,6 +121,8 @@ class FlutterWebGL {
 
     _config = chooseConfigResult[0];
 
+    int configID =
+        eglGetConfigAttrib(_display, _config, EglConfigAttribute.configId);
     // The following code is helpful to debug EGL issues
     // final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
     // print('Number of configs ${existingConfigs.length}');
@@ -133,6 +140,7 @@ class FlutterWebGL {
     final result = await _channel.invokeMethod(
       'initOpenGL',
     );
+
     if (result == null) {
       throw EglException(
           'Plugin.initOpenGL didn\'t return anything. Something is really wrong!');
@@ -158,7 +166,7 @@ class FlutterWebGL {
         /// we link both contexts so that app and plugin can share OpenGL Objects
         shareContext: _pluginContext,
         contextClientVersion: 3,
-        isDebugContext: debug);
+        isDebugContext: debug && !Platform.isAndroid);
 
     // /// to make a context current you have to provide some texture even if you don't use it afterwards
     // _dummySurface = eglCreatePbufferSurface(_display, _config, attributes: {
@@ -259,6 +267,12 @@ class FlutterWebGL {
     final result = await _channel
         .invokeMethod('createTexture', {"width": width, "height": height});
 
+    if (Platform.isAndroid) {
+      final newTexture = FlutterGLTexture.fromMap(result, 0, width, height);
+      rawOpenGl.glViewport(0, 0, width, height);
+      return newTexture;
+    }
+
     Pointer<Uint32> fbo = calloc();
     rawOpenGl.glGenFramebuffers(1, fbo);
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, fbo.value);
@@ -303,8 +317,12 @@ class FlutterWebGL {
   }
 
   static Future<void> updateTexture(FlutterGLTexture texture) async {
-    rawOpenGl.glFlush();
+    if (Platform.isAndroid) {
+      eglSwapBuffers(_display, _dummySurface);
+      return;
+    }
 
+    rawOpenGl.glFlush();
     assert(_activeFramebuffer != null,
         'There is no active FlutterGL Texture to update');
     await _channel
@@ -328,6 +346,9 @@ class FlutterWebGL {
   }
 
   static void activateTexture(FlutterGLTexture texture) {
+    if (Platform.isAndroid) {
+      return;
+    }
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, texture.fboId);
     if (texture.metalAsGLTextureId != 0) {
       // Draw to metal interop texture directly
