@@ -60,7 +60,7 @@ class FlutterWebGL {
 
   static LibOpenGLES? _libOpenGLES;
   static Pointer<Void> _display = nullptr;
-  static late Pointer<Void> _config;
+  static late Pointer<Void> _EGLconfig;
   static Pointer<Void> _baseAppContext = nullptr;
   static Pointer<Void> _pluginContext = nullptr;
   static late Pointer<Void> _dummySurface;
@@ -93,56 +93,17 @@ class FlutterWebGL {
   }
 
   // Next stepps:
-  // * share EGLConfig via ID https://stackoverflow.com/questions/24831462/how-to-use-android-opengl-gles10-objects
   // * test on all plaforms
   // * mulitple textures on Android and the other OSs
 
-  static Future<void> initOpenGL([bool debug = false]) async {
+  static Future<void> initOpenGL([bool useDebugContext = false]) async {
     /// make sure we don't call this twice
     if (_display != nullptr) {
       return;
     }
     loadEGL();
-    _display = eglGetDisplay();
-    final initializeResult = eglInitialize(_display);
-
-    debugPrint('EGL version: $initializeResult');
-
-    final chooseConfigResult = eglChooseConfig(
-      _display,
-      attributes: {
-        EglConfigAttribute.renderableType: EglValue.openglEs3Bit.toIntValue(),
-        // EglConfigAttribute.surfaceType: EGL_WINDOW_BIT,
-        EglConfigAttribute.redSize: 8,
-        EglConfigAttribute.greenSize: 8,
-        EglConfigAttribute.blueSize: 8,
-        EglConfigAttribute.alphaSize: 8,
-        EglConfigAttribute.depthSize: 16,
-      },
-      maxConfigs: 1,
-    );
-
-    _config = chooseConfigResult[0];
-
-    int configID =
-        eglGetConfigAttrib(_display, _config, EglConfigAttribute.configId);
-    // The following code is helpful to debug EGL issues
-    // final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
-    // print('Number of configs ${existingConfigs.length}');
-    // for (int i = 0; i < existingConfigs.length; i++) {
-    //   print('\nConfig No: $i');
-    //   printConfigAttributes(_display, existingConfigs[i]);
-    // }
-
-    // _pluginContext = eglCreateContext(
-    //   _display,
-    //   _config,
-    //   contextClientVersion: 3,
-    // );
-
-    final result = await _channel.invokeMethod(
-      'initOpenGL',
-    );
+    // Initialize native part of he plugin
+    final result = await _channel.invokeMethod('initOpenGL');
 
     if (result == null) {
       throw EglException(
@@ -164,23 +125,58 @@ class FlutterWebGL {
     }
     _dummySurface = Pointer<Void>.fromAddress(dummySurfacePointer);
 
-    _baseAppContext = eglCreateContext(_display, _config,
+    /// Init OpenGL on the Dart side too
+    _display = eglGetDisplay();
+    final initializeResult = eglInitialize(_display);
 
-        /// we link both contexts so that app and plugin can share OpenGL Objects
+    debugPrint('EGL version: $initializeResult');
+
+    late final Map<EglConfigAttribute, int> eglAttributes;
+
+    /// In case the plugin returns its selected EGL config we use it.
+    /// Finally this should be how all platforms behave. Till all platforms
+    /// support this we leave this check here
+    final eglConfigId = result['eglConfigId'] as int?;
+    if (eglConfigId != null) {
+      eglAttributes = {
+        EglConfigAttribute.configId: eglConfigId,
+      };
+    } else {
+      eglAttributes = {
+        EglConfigAttribute.renderableType: EglValue.openglEs3Bit.toIntValue(),
+        EglConfigAttribute.redSize: 8,
+        EglConfigAttribute.greenSize: 8,
+        EglConfigAttribute.blueSize: 8,
+        EglConfigAttribute.alphaSize: 8,
+        EglConfigAttribute.depthSize: 16,
+      };
+    }
+    final chooseConfigResult = eglChooseConfig(
+      _display,
+      attributes: eglAttributes,
+      maxConfigs: 1,
+    );
+    _EGLconfig = chooseConfigResult[0];
+
+    // The following code is helpful to debug EGL issues
+    // final existingConfigs = eglGetConfigs(_display, maxConfigs: 50);
+    // print('Number of configs ${existingConfigs.length}');
+    // for (int i = 0; i < existingConfigs.length; i++) {
+    //   print('\nConfig No: $i');
+    //   printConfigAttributes(_display, existingConfigs[i]);
+    // }
+
+    _baseAppContext = eglCreateContext(_display, _EGLconfig,
+        // we link both contexts so that app and plugin can share OpenGL Objects
         shareContext: _pluginContext,
         contextClientVersion: 3,
-        isDebugContext: debug && !Platform.isAndroid);
-
-    // /// to make a context current you have to provide some texture even if you don't use it afterwards
-    // _dummySurface = eglCreatePbufferSurface(_display, _config, attributes: {
-    //   EglSurfaceAttributes.width: 16,
-    //   EglSurfaceAttributes.height: 16,
-    // });
+        // Android does not support debugContexts
+        isDebugContext: useDebugContext && !Platform.isAndroid);
 
     /// bind context to this thread. All following OpenGL calls from this thread will use this context
     eglMakeCurrent(_display, _dummySurface, _dummySurface, _baseAppContext);
 
-    if (debug && Platform.isWindows) {
+    if (useDebugContext && Platform.isWindows) {
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT);
       rawOpenGl.glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
       rawOpenGl.glDebugMessageCallback(
@@ -368,7 +364,7 @@ class FlutterWebGL {
   static void printOpenGLError(String message) {
     var glGetError = rawOpenGl.glGetError();
     if (glGetError != GL_NO_ERROR) {
-      print('$message: ${glGetError}');
+      print('$message: $glGetError');
     }
   }
 }
