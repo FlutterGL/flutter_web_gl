@@ -250,7 +250,8 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
             return;
         }
 
-
+       /// TODO with MetalAngle it should be possible to make the context current without any surface by passing EGL_NO_SURFACE
+       /// if that works then we can remove the lines below. this should then be also be possible for iOS.
         // This is just a dummy surface that it needed to make an OpenGL context current (bind it to this thread)
         CALayer* dummyLayer       = [[CALayer alloc] init];
         dummyLayer.frame = CGRectMake(0, 0, 1, 1);

@@ -26,7 +26,7 @@ using flutter::EncodableValue;
   {
   public:
       OpenGLException(char* message, int error);
-      GLint error = 0;;
+      GLint error = 0;
       char* message ="";
   };
 

@@ -37,6 +37,10 @@ public final class OpenGLManager  {
 
     EGLConfig eglConfig;
     private int configId;
+    /// This here are only used so that we can create surfaces for new textures and access the native
+    // handle which is opaque in the Kronos implementation
+    private android.opengl.EGLDisplay eglDisplayAndroid;
+    private android.opengl.EGLConfig eglConfigAndroid;
 
     public android.opengl.EGLContext getEGLContext() {
         if (eglContext == null)
@@ -47,20 +51,9 @@ public final class OpenGLManager  {
         return  contextAndroid;
     }
 
-
     long createSurfaceFromTexture(SurfaceTexture texture) {
-//        EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, texture, null);
-        EGLSurface  eglWindowSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, texture, null);
-        if (!egl.eglMakeCurrent(eglDisplay, eglWindowSurface,eglWindowSurface , eglContext)) {
-            return 0;
-        }
-        GLES30.glClearColor( 1, 0,  0, 1);
-        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
-        long surfaceHandle = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW).getNativeHandle();
-        if (!egl.eglMakeCurrent(eglDisplay, eglSurface,eglSurface, eglContext)) {
-            return 0;
-        }
-        return surfaceHandle;
+        int [] attributes = new int[]{EGL_NONE};
+        return EGL14.eglCreateWindowSurface(eglDisplayAndroid, eglConfigAndroid, texture, attributes,0).getNativeHandle();
     }
 
      boolean initGL() {
@@ -104,6 +97,19 @@ public final class OpenGLManager  {
             return false;
         }
 
+         // make config and display accessible for EGL14 API because javax.microedition.khronos.egl
+         // classes don't allow to access the native handles
+         int valA[] = new int[1];
+         egl.eglGetConfigAttrib(eglDisplay, eglConfig, EGL10.EGL_CONFIG_ID, valA);
+         configId = valA[0];
+
+         eglDisplayAndroid = EGL14.eglGetCurrentDisplay();
+         int[] attribA = {EGL14.EGL_CONFIG_ID, configId, EGL14.EGL_NONE};
+         android.opengl.EGLConfig[] configA = new android.opengl.EGLConfig[1];
+         int[] nConfigA = new int[1];
+         EGL14.eglChooseConfig(eglDisplayAndroid, attribA, 0, configA, 0, 1, nConfigA, 0);
+         eglConfigAndroid = configA[0];
+
         String v = GLES30.glGetString(GL_VENDOR);
         int error = glGetError();
         if (error != GL_NO_ERROR)
@@ -115,7 +121,7 @@ public final class OpenGLManager  {
         String v2 = GLES30.glGetString(GL_VERSION);
 
         Log.i("FlutterWegGL", "OpenGL initialized: Vendor:" + v + " renderer: " + r + " Version: " + v2);
-        Log.d(LOG_TAG, "Successfully initialized GL");
+        Log.d(LOG_TAG, "Successfully initialized GL in plugin");
 
         return true;
     }
