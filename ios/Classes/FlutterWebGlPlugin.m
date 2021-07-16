@@ -222,19 +222,6 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
           return;
           
         }
-        // Obtain the OpenGL context that was created on the Dart side
-        // it is linked to the context that is used by the Dart side for all further OpenGL operations over FFI
-        // Because of that they are shared (linked) they have both access to the same RenderbufferObjects (RBO) which allows
-        // The Dart main thread to render into an Texture RBO which can then accessed from this thread and passed to the Flutter Engine
-        if (call.arguments) {
-            NSNumber* contextAsNSNumber = call.arguments[@"openGLContext"];
-            context = (EGLContext) contextAsNSNumber.longValue;
-        }
-        else
-        {
-          result([FlutterError errorWithCode: @"No OpenGL context" message: @"No OpenGL context received by the native part of FlutterGL.iniOpenGL"  details:NULL]);
-          return;
-        }
 
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         EGLint major;
@@ -297,14 +284,17 @@ static id<MTLDevice> GetANGLEMtlDevice(EGLDisplay display)
         if (v==NULL)
         {
             NSLog(@"GetString: GL_VENDOR returned NULL");
+            v="No Vendor";
         }
         if (r==NULL)
         {
             NSLog(@"GetString: GL_RENDERER returned NULL");
+            r="No renderer";
         }
         if (v2==NULL)
         {
             NSLog(@"GetString: GL_VERSION returned NULL");
+            v2="No Version";
         }
        NSLog(@"%@\n%@\n%@\n",[[NSString alloc] initWithUTF8String: v],[[NSString alloc] initWithUTF8String: r],[[NSString alloc] initWithUTF8String: v2]);
         /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called

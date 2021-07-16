@@ -7,7 +7,6 @@ import 'dart:ui';
 import 'package:dylib/dylib.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_gl/lib_egl.dart';
 import 'package:opengl_es_bindings/opengl_es_bindings.dart';
@@ -71,8 +70,7 @@ class FlutterWebGL {
     if (_libOpenGLES == null) {
       if (Platform.isMacOS || Platform.isIOS) {
         _libOpenGLES = LibOpenGLES(DynamicLibrary.process());
-      }
-      if (Platform.isAndroid) {
+      } else if (Platform.isAndroid) {
         _libOpenGLES = LibOpenGLES(DynamicLibrary.open('libGLESv3.so'));
       } else {
         _libOpenGLES =
