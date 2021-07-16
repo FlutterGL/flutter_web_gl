@@ -94,12 +94,11 @@ class FlutterWebGL {
     return version;
   }
 
-
-  Next stepps:
-  * create surface without making it current 
-  * share EGLConfig via ID https://stackoverflow.com/questions/24831462/how-to-use-android-opengl-gles10-objects
-  * test on all plaforms
-  * mulitple textures on Android and the other OSs
+  // Next stepps:
+  // * create surface without making it current
+  // * share EGLConfig via ID https://stackoverflow.com/questions/24831462/how-to-use-android-opengl-gles10-objects
+  // * test on all plaforms
+  // * mulitple textures on Android and the other OSs
 
   static Future<void> initOpenGL([bool debug = false]) async {
     /// make sure we don't call this twice
