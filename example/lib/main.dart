@@ -17,7 +17,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   final textures = <FlutterGLTexture>[];
-  int textureId = 0;
+  int textureId = -1;
   static const textureWidth = 640;
   static const textureHeight = 320;
   static const aspect = textureWidth / textureHeight;
@@ -67,7 +67,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   int iterationCount = 60;
   int framesOver = 0;
   void updateTexture(_) async {
-    // if (textureId == 0) return;
+    if (textureId < 0) return;
     if (!updating) {
       updating = true;
       stopwatch.reset();

@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:dylib/dylib.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_gl/lib_egl.dart';
 import 'package:opengl_es_bindings/opengl_es_bindings.dart';
@@ -92,6 +93,13 @@ class FlutterWebGL {
     final String version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
+
+
+  Next stepps:
+  * create surface without making it current 
+  * share EGLConfig via ID https://stackoverflow.com/questions/24831462/how-to-use-android-opengl-gles10-objects
+  * test on all plaforms
+  * mulitple textures on Android and the other OSs
 
   static Future<void> initOpenGL([bool debug = false]) async {
     /// make sure we don't call this twice
