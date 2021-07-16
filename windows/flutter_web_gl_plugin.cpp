@@ -271,8 +271,7 @@ void FlutterWebGlPlugin::HandleMethodCall(
 
       std::cerr << v << std::endl << r << std::endl << v2 << std::endl;
 
-      /// we send back the context. This might look a bit strange, but is necessary to allow this function to be called
-      /// from Dart Isolates.
+      /// we send back the context so that the Dart side can create a linked context. 
       auto response = flutter::EncodableValue(flutter::EncodableMap{
           {flutter::EncodableValue("context"),
            flutter::EncodableValue((int64_t) context)},
