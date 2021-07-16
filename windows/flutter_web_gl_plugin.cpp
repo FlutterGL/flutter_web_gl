@@ -238,6 +238,9 @@ void FlutterWebGlPlugin::HandleMethodCall(
           return;
       }
 
+      EGLint configId;
+      eglGetConfigAttrib(display,config,EGL_CONFIG_ID,&configId);
+
       const EGLint surfaceAttributes[] = {
         EGL_WIDTH, 16,
         EGL_HEIGHT, 16,
@@ -274,7 +277,9 @@ void FlutterWebGlPlugin::HandleMethodCall(
           {flutter::EncodableValue("context"),
            flutter::EncodableValue((int64_t) context)},
           {flutter::EncodableValue("dummySurface"),
-           flutter::EncodableValue((int64_t) dummySurfaceForDartSide)}
+           flutter::EncodableValue((int64_t) dummySurfaceForDartSide)},
+          {flutter::EncodableValue("eglConfigId"),
+           flutter::EncodableValue((int64_t) configId)}
           });
       result->Success(response);
       return;
