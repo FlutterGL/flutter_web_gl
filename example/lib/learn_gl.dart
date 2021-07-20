@@ -50,20 +50,17 @@ part 'renderable.dart';
 // part 'star.dart';
 
 late RenderingContext gl;
-Lesson? lesson;
 
 void resetLessons() {
   gl = FlutterWebGL.getWebGLContext();
-  mvMatrix = new Matrix4()..identity();
   // Set the fill color to black
   gl.clearColor(0, 0, 0, 1.0);
 }
 
-void selectLesson(int number) {
+Lesson createLesson(int number) {
   switch (number) {
     case 1:
-      lesson = Lesson1();
-      break;
+      return Lesson1();
     // case 2:
     //   return new Lesson2();
     // case 3:
@@ -95,27 +92,12 @@ void selectLesson(int number) {
     // case 16:
     //   return new Lesson16();
     default:
-      lesson = Lesson1();
+      return Lesson1();
   }
 }
 
 /// The global key-state map.
 Set<int> currentlyPressedKeys = new Set<int>();
-
-/// Perspective matrix
-late Matrix4 pMatrix;
-
-/// Model-View matrix.
-late Matrix4 mvMatrix;
-
-List<Matrix4> mvStack = <Matrix4>[];
-
-/// Add a copy of the current Model-View matrix to the the stack for future
-/// restoration.
-mvPushMatrix() => mvStack.add(new Matrix4.fromMatrix(mvMatrix));
-
-/// Pop the last matrix off the stack and set the Model View matrix.
-mvPopMatrix() => mvMatrix = mvStack.removeLast();
 
 enum Directions { none, left, right, up, down }
 
@@ -140,6 +122,10 @@ void handleDirection({up()?, down()?, left()?, right()?}) {
 
 /// The base for all Learn WebGL lessons.
 abstract class Lesson {
+  Lesson() {
+    mvMatrix = new Matrix4()..identity();
+  }
+
   /// Render the scene to the [viewWidth], [viewHeight], and [aspect] ratio.
   void drawScene(int viewWidth, int viewHeight, double aspect);
 
@@ -152,11 +138,27 @@ abstract class Lesson {
 
   /// Added for your convenience to track time between [animate] callbacks.
   num lastTime = 0;
+
+  /// Perspective matrix
+  late Matrix4 pMatrix;
+
+  /// Model-View matrix.
+  late Matrix4 mvMatrix;
+
+  List<Matrix4> mvStack = <Matrix4>[];
+
+  /// Add a copy of the current Model-View matrix to the the stack for future
+  /// restoration.
+  mvPushMatrix() => mvStack.add(new Matrix4.fromMatrix(mvMatrix));
+
+  /// Pop the last matrix off the stack and set the Model View matrix.
+  mvPopMatrix() => mvMatrix = mvStack.removeLast();
 }
 
 /// Load the given image at [url] and call [handle] to execute some GL code.
 /// Return a [Future] to asynchronously notify when the texture is complete.
-Future<WebGLTexture> loadTexture(String url, Future Function(WebGLTexture tex, Image data) handle) async {
+Future<WebGLTexture> loadTexture(
+    String url, Future Function(WebGLTexture tex, Image data) handle) async {
   var texture = gl.createTexture();
   final data = await gl.loadImageFromAsset('assets/$url');
   await handle(texture, data);

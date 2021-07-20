@@ -87,6 +87,7 @@ class Lesson5 extends Lesson {
 
   void drawScene(int viewWidth, int viewHeight, double aspect) {
     if (!isLoaded) return;
+    gl.useProgram(program.program);
 
     // Basic viewport setup and clearing of the screen
     gl.clear(WebGL.COLOR_BUFFER_BIT | WebGL.DEPTH_BUFFER_BIT);
@@ -142,6 +143,10 @@ class Lesson5 extends Lesson {
   }
 
   void handleKeys() {
-    handleDirection(up: () => yRot -= 0.5, down: () => yRot += 0.5, left: () => xRot -= 0.5, right: () => xRot += 0.5);
+    handleDirection(
+        up: () => yRot -= 0.5,
+        down: () => yRot += 0.5,
+        left: () => xRot -= 0.5,
+        right: () => xRot += 0.5);
   }
 }

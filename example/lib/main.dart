@@ -18,6 +18,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   final textures = <FlutterGLTexture>[];
   int textureId = -1;
+  int textureId2 = -1;
+  Lesson? lesson;
+  Lesson? lesson2;
   static const textureWidth = 640;
   static const textureHeight = 320;
   static const aspect = textureWidth / textureHeight;
@@ -35,13 +38,16 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     try {
       textures
           .add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
+      textures
+          .add(await FlutterWebGL.createTexture(textureWidth, textureHeight));
     } on PlatformException catch (ex) {
       print("failed to get texture id");
       return;
     }
 
     resetLessons();
-    lesson = Lesson5();
+    lesson = Lesson3();
+    lesson2 = Lesson5();
 
     // /// Updating all Textues takes a slighllty less than 150ms
     // /// so we can't get much faster than this at the moment because it could happen that
@@ -51,6 +57,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     if (!mounted) return;
     setState(() {
       textureId = textures[0].textureId;
+      textureId2 = textures[1].textureId;
     });
     // timer = Timer.periodic(const Duration(milliseconds: 16), updateTexture);
     ticker = createTicker(updateTexture);
@@ -88,6 +95,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
         iterationCount = 60;
         framesOver = 0;
       }
+      textures[1].activate();
+      lesson2?.handleKeys();
+      lesson2?.animate(animationCounter += 2);
+      lesson2?.drawScene(-1, 0, aspect);
+      await textures[1].signalNewFrameAvailable();
       updating = false;
     } else {
       print('Too slow');
@@ -109,12 +121,30 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           title: const Text('Plugin example app'),
         ),
         body: LayoutBuilder(builder: (context, constraints) {
+          final useRow = constraints.maxWidth > constraints.maxHeight;
           return GestureDetector(
-              onVerticalDragStart: verticalDragStart,
-              onVerticalDragUpdate: verticalDragUpdate,
-              onHorizontalDragStart: horizontalDragStart,
-              onHorizontalDragUpdate: horizontalDragUpdate,
-              child: Container(child: Texture(textureId: textureId)));
+            onVerticalDragStart: verticalDragStart,
+            onVerticalDragUpdate: verticalDragUpdate,
+            onHorizontalDragStart: horizontalDragStart,
+            onHorizontalDragUpdate: horizontalDragUpdate,
+            child: Container(
+              child: useRow
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(child: Texture(textureId: textureId)),
+                        Expanded(child: Texture(textureId: textureId2)),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Texture(textureId: textureId),
+                        Texture(textureId: textureId2),
+                      ],
+                    ),
+            ),
+          );
         }),
       ),
     );
