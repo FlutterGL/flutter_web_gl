@@ -12,8 +12,6 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 
-import static android.opengl.EGL14.EGL_ALPHA_SIZE;
-import static android.opengl.EGL14.EGL_OPENGL_ES2_BIT;
 import static android.opengl.EGL14.EGL_CONTEXT_CLIENT_VERSION;
 import static android.opengl.EGLExt.EGL_OPENGL_ES3_BIT_KHR;
 import static android.opengl.GLES20.GL_NO_ERROR;
@@ -51,12 +49,22 @@ public final class OpenGLManager  {
         return  contextAndroid;
     }
 
-    long createSurfaceFromTexture(SurfaceTexture texture) {
+    android.opengl.EGLSurface createSurfaceFromTexture(SurfaceTexture texture) {
         int [] attributes = new int[]{EGL_NONE};
-        return EGL14.eglCreateWindowSurface(eglDisplayAndroid, eglConfigAndroid, texture, attributes,0).getNativeHandle();
+        return EGL14.eglCreateWindowSurface(eglDisplayAndroid, eglConfigAndroid, texture, attributes,0);
     }
 
-     boolean initGL() {
+    android.opengl.EGLSurface createDummySurface() {
+        int[] surfaceAttributes = new int[]{
+
+                EGL_WIDTH, 16,
+                EGL_HEIGHT, 16,
+                EGL_NONE
+        };
+        return EGL14.eglCreatePbufferSurface(eglDisplayAndroid, eglConfigAndroid, surfaceAttributes,0);
+    }
+
+    boolean initGL() {
         egl = (EGL10) EGLContext.getEGL();
         eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
 
@@ -161,7 +169,7 @@ public final class OpenGLManager  {
         return new int[]{
                 EGL10.EGL_RENDERABLE_TYPE,
                 EGL_OPENGL_ES3_BIT_KHR,
-              //  EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
+                EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
                 EGL10.EGL_RED_SIZE, 8,
                 EGL10.EGL_GREEN_SIZE, 8,
                 EGL10.EGL_BLUE_SIZE, 8,
@@ -178,5 +186,9 @@ public final class OpenGLManager  {
 
     public int getConfigId() {
         return configId;
+    }
+
+    public android.opengl.EGLDisplay getEglDisplayAndroid() {
+        return eglDisplayAndroid;
     }
 }

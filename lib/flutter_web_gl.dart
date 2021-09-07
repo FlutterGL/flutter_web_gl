@@ -19,16 +19,25 @@ class FlutterGLTexture {
   final int textureId;
   final int rboId;
   final int metalAsGLTextureId;
+  late final Pointer<Void> androidSurface;
   final int fboId;
   final int width;
   final int height;
   FlutterGLTexture(this.textureId, this.rboId, this.metalAsGLTextureId,
-      this.fboId, this.width, this.height);
+      int androidSurfaceId, this.fboId, this.width, this.height) {
+    androidSurface = Pointer.fromAddress(androidSurfaceId);
+  }
 
   static FlutterGLTexture fromMap(
       dynamic map, int fboId, int width, int height) {
-    return FlutterGLTexture(map['textureId']! as int, map['rbo']! as int,
-        map['metalAsGLTexture'] as int? ?? 0, fboId, width, height);
+    return FlutterGLTexture(
+        map['textureId']! as int,
+        map['rbo'] as int? ?? 0,
+        map['metalAsGLTexture'] as int? ?? 0,
+        map['surface'] as int? ?? 0,
+        fboId,
+        width,
+        height);
   }
 
   Map<String, int> toMap() {
@@ -346,6 +355,8 @@ class FlutterWebGL {
 
   static void activateTexture(FlutterGLTexture texture) {
     if (Platform.isAndroid) {
+      eglMakeCurrent(_display, texture.androidSurface, texture.androidSurface,
+          _baseAppContext);
       return;
     }
     rawOpenGl.glBindFramebuffer(GL_FRAMEBUFFER, texture.fboId);

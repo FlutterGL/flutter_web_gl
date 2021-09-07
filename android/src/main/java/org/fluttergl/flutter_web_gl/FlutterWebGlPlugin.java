@@ -77,49 +77,28 @@ class MyEGLContext extends EGLObjectHandle {
 class FlutterGLTexture
 {
   public
-  FlutterGLTexture(TextureRegistry.SurfaceTextureEntry textureEntry,   int width, int  height)
+  FlutterGLTexture(TextureRegistry.SurfaceTextureEntry textureEntry,  OpenGLManager openGLManager, int width, int  height)
   {
     this.with=width;
     this.height=height;
-    this.surfaceTextureEntry=textureEntry;
+    this.openGLManager = openGLManager;
+    surfaceTextureEntry=textureEntry;
     surfaceTextureEntry.surfaceTexture().setDefaultBufferSize(width,height);
-
-
-
+    surface = openGLManager.createSurfaceFromTexture(surfaceTextureEntry.surfaceTexture());
   }
 
   protected void finalize()
   {
-
+    surfaceTextureEntry.release();
+    EGL14.eglDestroySurface(openGLManager.getEglDisplayAndroid(), surface);
   }
 
+  OpenGLManager openGLManager;
   int with;
   int height;
-  int fbo;
-  int rbo;
+  EGLSurface surface;
   TextureRegistry.SurfaceTextureEntry surfaceTextureEntry;
 };
-
-
-class GLThread extends Thread
-{
-
-  @Override
-  public void run() {
-    super.run();
-    EGLDisplay display = EGL14.eglGetDisplay(EGL_DEFAULT_DISPLAY);
-
-    int[] version = new int[2];
-    boolean initializeResult = EGL14.eglInitialize(display, version, 0, version, 1);
-    if (!initializeResult) {
-      Log.i("EGL InitError", "eglInit failed", null);
-      return;
-    }
-
-    Log.i("FlutterWegGL", "EGL version in native plugin " + version[0] + "." + version[1]);
-
-  }
-}
 
 
 /** FlutterWebGlPlugin */
@@ -132,13 +111,14 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
   private EGLContext context=null;
   private TextureRegistry textureRegistry;
   private OpenGLManager openGLManager;
-  private TextureRegistry.SurfaceTextureEntry surfaceTextureEntry;
+  private Map<Long,FlutterGLTexture> textureMap;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "flutter_web_gl");
     channel.setMethodCallHandler(this);
     textureRegistry = flutterPluginBinding.getTextureRegistry();
+    textureMap = new HashMap<>();
   }
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -163,11 +143,6 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
       }
       openGLManager = new OpenGLManager();
 
-      surfaceTextureEntry = textureRegistry.createSurfaceTexture();
-      SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
-
-      surfaceTexture.setDefaultBufferSize(640,320);
-
       int[] attribute_list = new int[]{
               EGL_RENDERABLE_TYPE,
               EGL_OPENGL_ES3_BIT_KHR,
@@ -184,50 +159,53 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
         return;
       }
       context = openGLManager.getEGLContext();
-      long surface = openGLManager.createSurfaceFromTexture(surfaceTexture);
 
+      TextureRegistry.SurfaceTextureEntry surfaceTextureEntry = textureRegistry.createSurfaceTexture();
+      SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
+      surfaceTexture.setDefaultBufferSize(638,320);
+      long surface = openGLManager.createSurfaceFromTexture(surfaceTexture).getNativeHandle();
 
-      long display = EGL14.eglGetCurrentDisplay().getNativeHandle();
+       
+
       Map<String, Object> response = new HashMap<>();
       response.put("context", context.getNativeHandle());
-      response.put("dummySurface",surface );
       response.put("eglConfigId",openGLManager.getConfigId());
+      response.put("dummySurface",surface );
+      // response.put("dummySurface",openGLManager.createDummySurface().getNativeHandle());
       result.success(response);
     }
       else if (call.method.equals("createTexture")){
 
       int width = (int) arguments.get("width");
       int height = (int) arguments.get("height");
-        if (width == 0) {
-          result.error("no texture width","no texture width",0);
-          return;
-        }
-        if (height==0) {
-          result.error("no texture height","no texture height",null);
-          return;
-        }
-/*
-      FlutterGLTexture flutterGLTexture;
 
-      flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
-      try
-      {
-        flutterGLTexture = new FlutterGLTexture(textureRegistry.createSurfaceTexture(), width, height);
-      }
-      catch (OpenGLException ex)
-      {
-        result.error(ex.message + " : " + ex.error,null,null);
+      if (width == 0) {
+        result.error("no texture width","no texture width",0);
         return;
       }
-      //flutterGLTextures.insert(TextureMap::value_type(flutterGLTexture->flutterTextureId, std::move(flutterGLTexture)));
+      if (height==0) {
+        result.error("no texture height","no texture height",null);
+        return;
+      }
+      FlutterGLTexture flutterGLTexture;
+
+      try
+      {
+
+        TextureRegistry.SurfaceTextureEntry surfaceTextureEntry = textureRegistry.createSurfaceTexture();
+        flutterGLTexture = new FlutterGLTexture(surfaceTextureEntry,openGLManager,  width, height);
+      }
+      catch (Exception ex)
+      {
+        result.error(ex.getMessage() + " : " + ex.toString(),null,null);
+        return;
+      }
+      textureMap.put(flutterGLTexture.surfaceTextureEntry.id(),flutterGLTexture);
 
 
-*/
       Map<String, Object> response = new HashMap<>();
-      response.put("textureId", surfaceTextureEntry.id());
-      response.put("rbo", 0);
-//      response.put("textureId", flutterGLTexture.surfaceTextureEntry.id());
-//      response.put("rbo", flutterGLTexture.rbo);
+      response.put("textureId", flutterGLTexture.surfaceTextureEntry.id());
+      response.put("surface", flutterGLTexture.surface.getNativeHandle());
       result.success(response);
 
       Log.i("FlutterWebGL","Created a new texture " + width + "x" + height);

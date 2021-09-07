@@ -139,8 +139,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Texture(textureId: textureId),
-                        Texture(textureId: textureId2),
+                        Expanded(child: Texture(textureId: textureId)),
+                        Expanded(child: Texture(textureId: textureId2)),
                       ],
                     ),
             ),
