@@ -143,16 +143,6 @@ public class FlutterWebGlPlugin implements FlutterPlugin, MethodCallHandler {
       }
       openGLManager = new OpenGLManager();
 
-      int[] attribute_list = new int[]{
-              EGL_RENDERABLE_TYPE,
-              EGL_OPENGL_ES3_BIT_KHR,
-              EGL_RED_SIZE, 8,
-              EGL_GREEN_SIZE, 8,
-              EGL_BLUE_SIZE, 8,
-              EGL_ALPHA_SIZE, 8,
-              EGL_DEPTH_SIZE, 16,
-              EGL_NONE};
-
       if(!openGLManager.initGL())
       {
         result.error("OpenGL Init Error",openGLManager.getError(),null);
